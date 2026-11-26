@@ -113,9 +113,8 @@ footer button{font-size:12px;color:var(--muted);background:none}
 
 <dialog id="att" aria-labelledby="atitle"><form id="aform">
   <h2 id="atitle"></h2><p class="status" id="ainfo"></p>
-  <div id="acodebox"><label>球队密码<input type="password" id="a-code" autocomplete="off"></label></div>
   <div id="alist"></div><p class="status" id="amsg" role="status"></p>
-  <div class="actions"><button type="button" data-close>关闭</button><button type="submit" class="primary" id="aopen">查看名单</button></div>
+  <div class="actions"><button type="button" data-close>关闭</button></div>
 </form></dialog>
 
 <dialog id="login" aria-labelledby="ltitle"><form id="lform">
@@ -361,17 +360,14 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('di
 
 /* 考勤 */
 let att=null;
-const attErr=e=>({bad_code:'球队密码不对',past_day:'过去的日期不能修改，请找教练',need_reason:'请填写请假原因',login:'登入已过期，请重新登入'})[e.detail||e.code]||(e.status===404?'数据库还没更新，请教练执行新的 SQL':'连接失败，请检查网络');
+const attErr=e=>({bad_code:'数据库还没更新，请教练执行新的 SQL',past_day:'过去的日期不能修改，请找教练',need_reason:'请填写请假原因',login:'登入已过期，请重新登入'})[e.detail||e.code]||(e.status===404?'数据库还没更新，请教练执行新的 SQL':'连接失败，请检查网络');
 async function rpc(fn,body){return api('/rest/v1/rpc/'+fn,{method:'POST',body:JSON.stringify(body)},session?await token():undefined)}
-const code=()=>$('a-code').value.trim();
 function openAtt(d,s){
   att={d,key:s.key,n:Symbol()};
   $('atitle').textContent=short(d)+' '+wk(d)+' · '+s.label;
   $('ainfo').textContent=[s.time,s.place].filter(Boolean).join(' @ ');
   $('alist').textContent='';$('amsg').textContent='';
-  $('a-code').value=store.get('vb-code')||'';
-  $('acodebox').hidden=!!session;$('aopen').hidden=false;$('att').showModal();
-  if(session||code())loadAtt();
+  $('att').showModal();loadAtt();
 }
 function playerRow(cur,p,can,count){
   const row=el('div','player'), extra=el('div','reason');
@@ -387,7 +383,7 @@ function playerRow(cur,p,can,count){
   const send=async(next,why_)=>{
     yes.disabled=no.disabled=true;$('amsg').textContent='保存中…';
     try{
-      await rpc('attendance_set',{p_day:cur.d,p_slot:cur.key,p_player:p.pid,p_status:next,p_reason:why_,p_code:code()});
+      await rpc('attendance_set',{p_day:cur.d,p_slot:cur.key,p_player:p.pid,p_status:next,p_reason:why_,p_code:''});
       status=next;reason=why_;paint();if(att===cur)count(' · 已保存');
       loadTally().then(()=>{if(document.activeElement?.tagName!=='TEXTAREA')render()});
     }catch(e){paint();if(att===cur)$('amsg').textContent=attErr(e)}
@@ -406,17 +402,16 @@ function playerRow(cur,p,can,count){
 async function loadAtt(){
   const cur=att;$('amsg').textContent='读取中…';
   try{
-    const rows=await rpc('attendance_get',{p_day:cur.d,p_slot:cur.key,p_code:code()});
+    const rows=await rpc('attendance_get',{p_day:cur.d,p_slot:cur.key,p_code:''});
     if(att!==cur)return;
-    if(!session)store.set('vb-code',code());
     const can=!!session||cur.d>=todayMY(), list=$('alist');list.textContent='';
     const n=v=>list.querySelectorAll('[data-status="'+v+'"]').length;
     const count=more=>$('amsg').textContent='出席 '+n('present')+' / '+rows.length+' · 请假 '+n('leave')+(more||'');
     rows.forEach(p=>list.append(playerRow(cur,p,can,count)));
-    $('acodebox').hidden=true;$('aopen').hidden=true;count(can?'':'（过去的日期只能查看）');
-  }catch(e){if(att===cur){$('amsg').textContent=attErr(e);$('acodebox').hidden=!!session;$('aopen').hidden=false}}
+    count(can?'':'（过去的日期只能查看）');
+  }catch(e){if(att===cur)$('amsg').textContent=attErr(e)}
 }
-$('aform').onsubmit=ev=>{ev.preventDefault();loadAtt()};
+$('aform').onsubmit=ev=>ev.preventDefault();
 
 /* 时间选择（每 15 分钟） */
 const OPTIONS=Array.from({length:73},(_,i)=>{const m=360+i*15;return String(m/60|0).padStart(2,'0')+':'+String(m%60).padStart(2,'0')});
