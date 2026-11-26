@@ -41,6 +41,9 @@ button.slot.m{background:var(--gold-soft);color:var(--gold-ink)}
 button.slot:hover{outline:2px solid currentColor}
 .slot b{display:block;font:700 18px "Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums}
 .slot span{display:block}
+.slot .num{float:right;background:var(--card);border-radius:20px;padding:1px 8px;margin-left:4px;font:700 14px "Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums}
+.row-day .slot .num{font-size:19px;padding:2px 12px}
+@media (min-width:761px){.day .slot .num{float:none;display:table;margin:0 0 3px}}
 .tag{font-size:12px;border-radius:6px;padding:3px 8px;background:var(--bg);color:var(--muted);overflow-wrap:anywhere}
 .tag.c{background:var(--gold);color:#2b1b00;font-weight:700}
 .tag.h{color:var(--red)}
@@ -67,9 +70,20 @@ dialog{background:var(--card);color:var(--fg);border:1px solid var(--line);borde
 dialog::backdrop{background:#0009}
 dialog form{display:flex;flex-direction:column;gap:10px}
 .actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
-#alist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-#alist label{font-weight:500;font-size:15px;border:1px solid var(--line);border-radius:8px;padding:10px}
-#alist label:has(:checked){background:var(--blue-soft);border-color:var(--blue)}
+#amsg{position:sticky;bottom:-16px;background:var(--card);padding-block:8px}
+#alist{display:flex;flex-direction:column;gap:8px}
+.player{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}
+.player button{padding:6px 12px;font-size:13px}
+.player button.on-p{background:var(--blue);border-color:var(--blue);color:var(--card);font-weight:700}
+.player button.on-l{background:var(--gold);border-color:var(--gold);color:#2b1b00;font-weight:700}
+.reason{grid-column:1/-1;display:flex;gap:6px}
+.reason input{flex:1}
+.reason.shown{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.text{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.notice{border-left:0;background:var(--gold-soft);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.notice small{color:var(--muted)}
+.notice button{align-self:flex-end;font-size:12px;padding:3px 10px}
+.slot .off{display:inline-block;font-size:12px;font-weight:700}
 footer{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding-top:12px}
 footer button{font-size:12px;color:var(--muted);background:none}
 @media (max-width:760px){.days{grid-template-columns:minmax(0,1fr)}.edit{margin:0}}
@@ -79,6 +93,11 @@ footer button{font-size:12px;color:var(--muted);background:none}
 <header><div class="wrap"><h1>一中男排 2027 练球时间表</h1><p>一起练 · 一起拼</p></div></header>
 <main class="wrap">
   <p class="status" id="status" role="status">读取中…</p>
+  <section class="card" id="newsbox" hidden>
+    <div class="bar"><h2>公告栏</h2><button type="button" id="addnews" hidden>＋ 发公告</button></div>
+    <div id="news" style="display:flex;flex-direction:column;gap:8px"></div>
+  </section>
+  <section class="card" id="focusbox" hidden><h2>本周训练重点</h2><p class="text" id="focus"></p></section>
   <section class="card" id="compbox" hidden>
     <div class="bar"><h2>接下来的比赛</h2><button type="button" id="addcomp" hidden>＋ 添加比赛</button></div>
     <div id="comps" style="display:flex;flex-direction:column;gap:10px"></div>
@@ -117,6 +136,13 @@ footer button{font-size:12px;color:var(--muted);background:none}
   <label>当天备注（只在教练版显示）<textarea id="f-note" maxlength="500"></textarea></label>
   <p class="status" id="derr" role="alert"></p>
   <div class="actions"><button type="button" id="reset">恢复默认</button><button type="button" data-close>取消</button><button type="submit" class="primary">保存</button></div>
+</form></dialog>
+
+<dialog id="ndlg" aria-labelledby="ntitle"><form id="nform">
+  <h2 id="ntitle">公告</h2>
+  <label>内容（所有人看得到）<textarea id="n-text" maxlength="500" required></textarea></label>
+  <p class="status" id="nerr" role="alert"></p>
+  <div class="actions"><button type="button" id="n-del">删除公告</button><button type="button" data-close>取消</button><button type="submit" class="primary">发布</button></div>
 </form></dialog>
 
 <dialog id="cdlg" aria-labelledby="ctitle"><form id="cform">
@@ -176,6 +202,12 @@ function slotsOf(d){
 const cloud=!!(SB_URL&&SB_KEY)&&!SB_KEY.startsWith('sb_secret_');
 const base=SB_URL.trim().replace(/\/(rest\/v1)?\/?$/,'');
 const notes={}, days={};
+let tally=null, tallyRun=0;
+/* 每个时间段的出席人数（只有数字，不含名字） */
+async function loadTally(){
+  const run=++tallyRun;
+  try{const r=await api('/rest/v1/rpc/attendance_counts',{method:'POST',body:JSON.stringify({p_from:FROM,p_to:END})});if(run===tallyRun)tally=r}catch{}
+}
 let session=store.get('vb-session'), writes=0, loaded=false, refreshing=null, last='';
 let today=todayMY(), month=today.slice(0,7);
 if(month<FIRST)month=FIRST;if(month>LAST)month=LAST;
@@ -231,7 +263,9 @@ async function flush(w){
 }
 function slotButton(d,s){
   const b=btn('slot'+(s.m?' m':''),null,()=>openAtt(d,s));
+  if(tally){const n=el('span','num',(tally.counts[d+'|'+s.key]||0)+'/'+tally.total);n.title='出席人数';b.append(n)}
   b.append(el('b','',s.time||'时间待定'),el('span','',s.label));
+  const away=tally&&tally.leave&&tally.leave[d+'|'+s.key];if(away)b.append(el('span','off','请假 '+away+' 人'));
   if(s.place)b.append(el('span','','@ '+s.place));
   return b;
 }
@@ -249,6 +283,32 @@ function renderComps(){
     box.append(row);
   });
 }
+const BOARD='2000-01-01'; /* 公告存放位置 */
+const posts=()=>(days[BOARD]&&days[BOARD].list)||[];
+function renderBoard(){
+  const list=posts(), box=$('news');box.textContent='';
+  $('newsbox').hidden=!session&&!list.length;$('addnews').hidden=!session;
+  if(!list.length)box.append(el('p','status','目前没有公告。'));
+  list.forEach(p=>{
+    const c=el('div','notice');c.append(el('p','text',p.text),el('small','',short(p.date)+' 发布'));
+    if(session)c.append(btn('','修改',()=>openNews(p)));
+    box.append(c);
+  });
+  const f=notes[monday(today)];$('focusbox').hidden=!!session||!f||!f.trim();$('focus').textContent=f||'';
+}
+let newsId=null;
+function openNews(p){newsId=p?p.id:null;$('n-text').value=p?p.text:'';$('n-del').hidden=!p;$('nerr').textContent='';$('ndlg').showModal()}
+$('addnews').onclick=()=>openNews(null);
+async function saveBoard(list){
+  $('nerr').textContent='保存中…';
+  try{await save([{kind:'days',id:BOARD,data:{list}}]);$('ndlg').close();render()}catch(e){$('nerr').textContent=why(e)}
+}
+$('nform').onsubmit=ev=>{
+  ev.preventDefault();const text=$('n-text').value.trim();if(!text){$('nerr').textContent='请填写内容';return}
+  const old=posts().find(p=>p.id===newsId);
+  saveBoard(old?posts().map(p=>p===old?{...p,text}:p):[{id:Date.now().toString(36),date:todayMY(),text},...posts()]);
+};
+$('n-del').onclick=()=>saveBoard(posts().filter(p=>p.id!==newsId));
 function dateBox(d){const e=el('div','date',short(d));e.append(el('small','',wk(d)+(d===today?' · 今天':'')));return e}
 const monthDates=()=>{const out=[];for(let t=parse(month+'-01');iso(t).startsWith(month);t+=DAY)out.push(iso(t));return out};
 function renderPlayer(root){
@@ -277,7 +337,7 @@ function renderCoach(root){
       if(d>=FROM&&d<=END){const e=btn('edit','编辑 / 加时段',()=>openDay(d));e.id='e-'+d;c.append(e)}
       g.append(c);
     }
-    const lab=el('label','','本周训练内容'), ta=el('textarea'), out=el('span','status');
+    const lab=el('label','','本周训练重点（本周的内容球员看得到）'), ta=el('textarea'), out=el('span','status');
     ta.id='n-'+w;ta.maxLength=3000;ta.placeholder='写下这个礼拜要练什么';ta.value=pending[w]??notes[w]??'';
     ta.oninput=()=>queue(w,ta.value);ta.onblur=()=>flush(w);out.id='s-'+w;
     lab.append(ta);card.append(g,lab,out);root.append(card);
@@ -293,7 +353,7 @@ function render(){
   $('upload').hidden=!(session&&loaded&&localRows().length);
   const root=$('view');root.textContent='';
   if(!loaded)return;
-  renderComps();(session?renderCoach:renderPlayer)(root);
+  renderBoard();renderComps();(session?renderCoach:renderPlayer)(root);
 }
 const step=n=>{const d=new Date(parse(month+'-01'));d.setUTCMonth(d.getUTCMonth()+n);month=iso(d.getTime()).slice(0,7);render()};
 $('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
@@ -301,7 +361,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('di
 
 /* 考勤 */
 let att=null;
-const attErr=e=>({bad_code:'球队密码不对',past_day:'过去的日期不能打勾，请找教练',not_today:'数据库还没更新，请教练执行新的 SQL',login:'登入已过期，请重新登入'})[e.detail||e.code]||'连接失败，请检查网络';
+const attErr=e=>({bad_code:'球队密码不对',past_day:'过去的日期不能修改，请找教练',need_reason:'请填写请假原因',login:'登入已过期，请重新登入'})[e.detail||e.code]||(e.status===404?'数据库还没更新，请教练执行新的 SQL':'连接失败，请检查网络');
 async function rpc(fn,body){return api('/rest/v1/rpc/'+fn,{method:'POST',body:JSON.stringify(body)},session?await token():undefined)}
 const code=()=>$('a-code').value.trim();
 function openAtt(d,s){
@@ -313,24 +373,46 @@ function openAtt(d,s){
   $('acodebox').hidden=!!session;$('aopen').hidden=false;$('att').showModal();
   if(session||code())loadAtt();
 }
+function playerRow(cur,p,can,count){
+  const row=el('div','player'), extra=el('div','reason');
+  let status=p.status||'', reason=p.reason||'';
+  const yes=btn('','出席'), no=btn('','请假');
+  const paint=()=>{
+    row.dataset.status=status;
+    yes.className=status==='present'?'on-p':'';no.className=status==='leave'?'on-l':'';
+    yes.setAttribute('aria-pressed',status==='present');no.setAttribute('aria-pressed',status==='leave');
+    yes.disabled=no.disabled=!can;extra.textContent='';extra.className='reason';
+    if(status==='leave'){extra.className='reason shown';extra.textContent=session?'原因：'+reason:'原因已交给教练'}
+  };
+  const send=async(next,why_)=>{
+    yes.disabled=no.disabled=true;$('amsg').textContent='保存中…';
+    try{
+      await rpc('attendance_set',{p_day:cur.d,p_slot:cur.key,p_player:p.pid,p_status:next,p_reason:why_,p_code:code()});
+      status=next;reason=why_;paint();if(att===cur)count(' · 已保存');
+      loadTally().then(()=>{if(document.activeElement?.tagName!=='TEXTAREA')render()});
+    }catch(e){paint();if(att===cur)$('amsg').textContent=attErr(e)}
+  };
+  yes.onclick=()=>send(status==='present'?'':'present','');
+  no.onclick=()=>{
+    if(status==='leave'){send('','');return}
+    extra.textContent='';extra.className='reason';
+    const i=el('input');i.maxLength=100;i.placeholder='请假原因';i.setAttribute('aria-label',p.pname+' 请假原因');
+    const ok=()=>{if(!i.value.trim()){$('amsg').textContent='请填写请假原因';i.focus();return}send('leave',i.value.trim())};
+    i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();ok()}};
+    extra.append(i,btn('primary','提交',ok));i.focus();
+  };
+  row.append(el('span','',p.pname),yes,no,extra);paint();return row;
+}
 async function loadAtt(){
   const cur=att;$('amsg').textContent='读取中…';
   try{
-    const rows=await rpc('attendance_list',{p_day:cur.d,p_slot:cur.key,p_code:code()});
+    const rows=await rpc('attendance_get',{p_day:cur.d,p_slot:cur.key,p_code:code()});
     if(att!==cur)return;
     if(!session)store.set('vb-code',code());
     const can=!!session||cur.d>=todayMY(), list=$('alist');list.textContent='';
-    const count=extra=>$('amsg').textContent='出席 '+list.querySelectorAll(':checked').length+' / '+rows.length+(extra||'');
-    rows.forEach(p=>{
-      const l=el('label'),c=el('input');c.type='checkbox';c.checked=p.present;c.disabled=!can;
-      c.onchange=async()=>{
-        c.disabled=true;$('amsg').textContent='保存中…';
-        try{await rpc('attendance_mark',{p_day:cur.d,p_slot:cur.key,p_player:p.pid,p_present:c.checked,p_code:code()});if(att===cur)count(' · 已保存')}
-        catch(e){c.checked=!c.checked;if(att===cur)$('amsg').textContent=attErr(e)}
-        c.disabled=false;
-      };
-      l.append(c,p.pname);list.append(l);
-    });
+    const n=v=>list.querySelectorAll('[data-status="'+v+'"]').length;
+    const count=more=>$('amsg').textContent='出席 '+n('present')+' / '+rows.length+' · 请假 '+n('leave')+(more||'');
+    rows.forEach(p=>list.append(playerRow(cur,p,can,count)));
     $('acodebox').hidden=true;$('aopen').hidden=true;count(can?'':'（过去的日期只能查看）');
   }catch(e){if(att===cur){$('amsg').textContent=attErr(e);$('acodebox').hidden=!!session;$('aopen').hidden=false}}
 }
@@ -416,10 +498,10 @@ $('upload').onclick=async()=>{try{await save(localRows());render()}catch(e){$('s
 async function pull(){
   const before=writes;
   try{
-    const rows=await api('/rest/v1/calendar_entries?select=kind,id,data&order=kind,id');
+    const [rows]=await Promise.all([api('/rest/v1/calendar_entries?select=kind,id,data&order=kind,id'),loadTally()]);
     if(before!==writes)return;
     $('status').hidden=true;
-    const sig=JSON.stringify(rows)+todayMY();
+    const sig=JSON.stringify([rows,tally])+todayMY();
     if(loaded&&sig===last)return;
     if(loaded&&(document.activeElement?.tagName==='TEXTAREA'||Object.keys(pending).length))return;
     last=sig;
