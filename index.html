@@ -27,7 +27,16 @@ h2{margin:0;font:700 22px var(--num);letter-spacing:.02em}
 .whead span{color:var(--muted);font-size:13px}
 .days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
 .day{display:flex;flex-direction:column;align-items:stretch;gap:4px;text-align:left;padding:8px;min-height:112px;background:var(--card)}
-.day:hover{border-color:var(--court)}
+.day{border:1px solid var(--line);border-radius:6px}
+button.slot{display:block;width:100%;text-align:left;border:0;padding:3px 6px;font-size:12px;line-height:1.4}
+button.slot:hover{outline:2px solid currentColor}
+button.slot small{display:block;font-size:11px}
+.edit{margin-top:auto;font-size:12px;padding:2px 6px}
+.xrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;border:1px solid var(--line);border-radius:6px;padding:8px}
+dialog{max-height:calc(100dvh - 32px);overflow:auto}
+#alist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}
+#alist label{flex-direction:row;justify-content:flex-start;align-items:center;gap:8px;font-weight:400;font-size:15px;padding:6px 0}
+#alist input{width:20px;height:20px}
 .day.past{background:var(--off);color:var(--muted)}
 .day.today{box-shadow:inset 0 0 0 2px var(--court)}
 .date{font:600 18px var(--num);font-variant-numeric:tabular-nums}
@@ -49,7 +58,7 @@ dialog label{flex-direction:column;gap:4px}
 dialog label.chk{flex-direction:row;justify-content:flex-start;align-items:center}
 .row{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 .primary{background:var(--court);border-color:var(--court);color:var(--card);font-weight:700}
-@media (max-width:760px){.days{grid-template-columns:minmax(0,1fr)}.day{min-height:0;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px}.date{width:76px}.slot b{display:inline;margin-right:6px}}
+@media (max-width:760px){.days{grid-template-columns:minmax(0,1fr)}.day{min-height:0;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px}button.slot{width:auto}.edit{margin:0 0 0 auto}.date{width:76px}.slot b{display:inline;margin-right:6px}}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
 </head>
@@ -57,7 +66,7 @@ dialog label.chk{flex-direction:row;justify-content:flex-start;align-items:cente
 <main>
   <header>
     <h1>排球练球日历</h1>
-    <p class="sub">2026年11月 – 2027年4月比赛。周一至五 17:00–19:30，周末 19:00–22:00，周五和周日 19:00–22:00 友谊赛。点日期可改当天安排。</p>
+    <p class="sub">2026年11月 – 2027年4月比赛。周一至五 17:00–19:30，周末 19:00–22:00，周五和周日 19:00–22:00 友谊赛。点时间段打考勤。</p>
   </header>
   <p class="status" id="status" role="status">正在读取已保存的备注…</p>
   <div id="auth" hidden>
@@ -68,6 +77,16 @@ dialog label.chk{flex-direction:row;justify-content:flex-start;align-items:cente
   <nav id="months" aria-label="选择月份"></nav>
   <div id="weeks" style="display:flex;flex-direction:column;gap:16px"></div>
 </main>
+<dialog id="att" aria-labelledby="atitle">
+  <form id="aform">
+    <h2 id="atitle">考勤</h2>
+    <p class="status" id="ainfo"></p>
+    <div id="acodebox"><label for="a-code">球队密码<input type="password" id="a-code" autocomplete="off"></label></div>
+    <div id="alist"></div>
+    <p class="status" id="amsg" role="status"></p>
+    <div class="row"><button type="button" id="aclose">关闭</button><button type="submit" class="primary" id="aopen">查看名单</button></div>
+  </form>
+</dialog>
 <dialog id="login" aria-labelledby="ltitle">
   <form id="lform">
     <h2 id="ltitle">教练登入</h2>
@@ -82,8 +101,12 @@ dialog label.chk{flex-direction:row;justify-content:flex-start;align-items:cente
     <h2 id="dtitle"></h2>
     <label class="chk"><input type="checkbox" id="f-rest"> 当天休息</label>
     <label for="f-time">练球时间（留空 = 不练球）<input type="text" id="f-time" maxlength="40"></label>
+    <label for="f-loc">练球地点<input type="text" id="f-loc" maxlength="60"></label>
     <label class="chk"><input type="checkbox" id="f-match"> 有友谊赛</label>
     <label for="f-mtime">友谊赛时间或对手<input type="text" id="f-mtime" maxlength="60"></label>
+    <label for="f-mloc">友谊赛地点<input type="text" id="f-mloc" maxlength="60"></label>
+    <div id="extras" style="display:flex;flex-direction:column;gap:8px"></div>
+    <button type="button" id="addslot">＋ 加时间段</button>
     <label for="f-note">当天备注<textarea id="f-note" maxlength="500"></textarea></label>
     <p class="status" id="derr" role="alert"></p>
     <div class="row">
@@ -117,27 +140,34 @@ if(!months.includes(month))month='all';
 const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e};
 const short=d=>+d.slice(8)+'/'+ +d.slice(5,7);
 
+const PLACE='一中排球场';
 function defaults(d){
   const wd=new Date(parse(d)).getUTCDay(), end=wd===0||wd===6;
   if(d<FROM) return {rest:false,time:'',match:false,mtime:'',note:''};
   if(wd===0) return {rest:false,time:'',match:true,mtime:'19:00–22:00',note:''};
   return {rest:false,time:end?'19:00–22:00':'17:00–19:30',match:wd===5,mtime:wd===5?'19:00–22:00':'',note:''};
 }
-const info=d=>({...defaults(d),...(days[d]||{})});
+const info=d=>({loc:PLACE,mloc:'',extra:[],...defaults(d),...(days[d]||{})});
 
 function fillDay(b,d){
   const x=info(d), wd='日一二三四五六'[new Date(parse(d)).getUTCDay()];
   b.textContent='';
   b.className='day'+(d<today?' past':'')+(d===today?' today':'');
   const h=el('span','date',short(d));h.append(el('small','','周'+wd));b.append(h);
-  const slot=(cls,label,time)=>{const s=el('span','slot '+cls);if(time)s.append(el('b','',time));s.append(label);b.append(s)};
-  if(x.rest) slot('r','休息');
+  const slot=(key,cls,label,time,place)=>{
+    const t=el('button','slot '+cls);t.type='button';
+    if(time)t.append(el('b','',time));t.append(label);if(place)t.append(el('small','','@ '+place));
+    t.onclick=()=>openAtt(d,key,label,time,place);b.append(t);
+  };
+  if(x.rest) b.append(el('span','slot r','休息'));
   else{
-    if(x.time) slot('','练球',x.time);
-    if(x.match) slot('m','友谊赛',x.mtime);
+    if(x.time) slot('practice','','练球',x.time,x.loc);
+    if(x.match) slot('match','m','友谊赛',x.mtime,x.mloc);
+    (x.extra||[]).forEach(e=>slot(e.id,'',e.label||'练球',e.time,e.loc));
   }
   if(HOL[d]) b.append(el('span','hol',HOL[d]));
   if(x.note) b.append(el('span','dnote',x.note));
+  const ed=el('button','edit','编辑 / 加时段');ed.type='button';ed.id='e-'+d;ed.onclick=()=>openDay(d);b.append(ed);
 }
 
 function build(){
@@ -148,7 +178,7 @@ function build(){
     const head=el('div','whead');
     head.append(el('h2','',short(w)+' – '+short(iso(parse(w)+6*DAY))),el('span','',phase(w)+(c.classList.contains('now')?' · 本周':'')));
     const g=el('div','days');
-    for(let i=0;i<7;i++){const d=iso(parse(w)+i*DAY),b=el('button');b.type='button';b.id='d-'+d;b.onclick=()=>openDay(d);fillDay(b,d);g.append(b)}
+    for(let i=0;i<7;i++){const d=iso(parse(w)+i*DAY),b=el('div');b.id='d-'+d;fillDay(b,d);g.append(b)}
     const lab=el('label','','本周训练内容');lab.htmlFor='n-'+w;
     const out=el('output');out.id='s-'+w;lab.append(out);
     const ta=el('textarea');ta.id='n-'+w;ta.maxLength=3000;ta.placeholder='写下这个礼拜要练什么';
@@ -196,15 +226,23 @@ function paintDays(){weeks.forEach(w=>{for(let i=0;i<7;i++){const d=iso(parse(w)
 
 /* day editor */
 let editing=null;
-function setForm(x){$('f-rest').checked=!!x.rest;$('f-time').value=x.time||'';$('f-match').checked=!!x.match;$('f-mtime').value=x.mtime||'';$('f-note').value=x.note||''}
+function addRow(e){
+  const r=el('div','xrow');r.dataset.id=e.id;
+  [['label','名称',e.label],['time','时间，例如 08:00–10:00',e.time],['loc','地点',e.loc]].forEach(([k,h,v])=>{const i=el('input');i.type='text';i.maxLength=60;i.name=k;i.placeholder=h;i.setAttribute('aria-label',h);i.value=v||'';r.append(i)});
+  const x=el('button','','删除此时段');x.type='button';x.onclick=()=>r.remove();r.append(x);$('extras').append(r);
+}
+$('addslot').onclick=()=>addRow({id:'x'+Date.now().toString(36),label:'加练',time:'',loc:PLACE});
+const readRows=()=>[...document.querySelectorAll('.xrow')].map(r=>{const o={id:r.dataset.id};r.querySelectorAll('input').forEach(i=>o[i.name]=i.value.trim());return o}).filter(o=>o.time);
+function setForm(x){$('f-loc').value=x.loc??PLACE;$('f-mloc').value=x.mloc||'';$('extras').textContent='';(x.extra||[]).forEach(addRow);$('f-rest').checked=!!x.rest;$('f-time').value=x.time||'';$('f-match').checked=!!x.match;$('f-mtime').value=x.mtime||'';$('f-note').value=x.note||''}
 function openDay(d){editing=d;$('dtitle').textContent=short(d)+' 周'+'日一二三四五六'[new Date(parse(d)).getUTCDay()];$('derr').textContent=cloud?(session?'':'只有登入后才能保存'):(db||local?'':'还在读取资料，暂时不能保存');setForm(info(d));$('dlg').showModal()}
 $('cancel').onclick=()=>$('dlg').close();
-$('reset').onclick=()=>setForm(defaults(editing));
+$('reset').onclick=()=>setForm({loc:PLACE,...defaults(editing)});
 $('form').onsubmit=async ev=>{
   ev.preventDefault();
   if(!db&&!local&&!cloud)return;
   if(cloud&&!session){$('derr').textContent='请先登入';return}
-  const d=editing,x={rest:$('f-rest').checked,time:$('f-time').value.trim(),match:$('f-match').checked,mtime:$('f-mtime').value.trim(),note:$('f-note').value.trim()};
+  const d=editing,x={rest:$('f-rest').checked,time:$('f-time').value.trim(),match:$('f-match').checked,mtime:$('f-mtime').value.trim(),note:$('f-note').value.trim(),loc:$('f-loc').value.trim(),mloc:$('f-mloc').value.trim(),extra:readRows()};
+  if([...document.querySelectorAll('.xrow input[name=time]')].some(i=>!i.value.trim())){$('derr').textContent='新时间段要填时间';return}
   $('derr').textContent='保存中…';
   try{await write('days',d,x);days[d]=x;fillDay($('d-'+d),d);$('dlg').close()}catch(e){$('derr').textContent=why(e)}
 };
@@ -218,7 +256,7 @@ async function api(path,opt={},token){
   const headers={apikey:SB_KEY,'Content-Type':'application/json',...(opt.headers||{})};
   if(token)headers.Authorization='Bearer '+token;
   const r=await fetch(base+path,{...opt,headers});
-  if(!r.ok)throw fail(r.status===401||r.status===403?'invalid_argument':'http',r.status);
+  if(!r.ok){const b=await r.json().catch(()=>({}));throw Object.assign(fail(r.status===401||r.status===403?'invalid_argument':'http',r.status),{detail:b.message||''})}
   const t=await r.text();return t?JSON.parse(t):null;
 }
 function setSession(a){
@@ -279,6 +317,47 @@ function startCloud(){
   setInterval(()=>{if(!document.hidden)pull()},30000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 }
+
+/* 考勤 */
+let att=null;
+const todayMY=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuching'}).format(new Date());
+const attErr=e=>({bad_code:'球队密码不对',not_today:'只能在当天打勾，补签请找教练',login:'登入已过期，请重新登入'})[e.detail||e.code]||'连接失败，请检查网络或 Supabase 设定';
+async function rpc(fn,body){return api('/rest/v1/rpc/'+fn,{method:'POST',body:JSON.stringify(body)},session?await token():undefined)}
+const teamCode=()=>$('a-code').value.trim();
+function openAtt(d,key,label,time,place){
+  att={d,key,n:Symbol()};
+  $('atitle').textContent=short(d)+' '+label+'考勤';
+  $('ainfo').textContent=[time,place].filter(Boolean).join(' @ ');
+  $('alist').textContent='';$('amsg').textContent='';
+  if(!cloud){$('amsg').textContent='考勤需要先设定 Supabase。';$('acodebox').hidden=true;$('aopen').hidden=true;$('att').showModal();return}
+  $('a-code').value=store.get('vb-code')||'';
+  $('acodebox').hidden=!!session;$('aopen').hidden=false;$('att').showModal();
+  if(session||teamCode())loadAtt();
+}
+async function loadAtt(){
+  const cur=att;$('amsg').textContent='读取中…';
+  try{
+    const rows=await rpc('attendance_list',{p_day:cur.d,p_slot:cur.key,p_code:teamCode()});
+    if(att!==cur)return;
+    if(!session)try{store.set('vb-code',teamCode())}catch{}
+    const can=!!session||cur.d===todayMY(), list=$('alist');list.textContent='';
+    const count=()=>$('amsg').textContent='出席 '+list.querySelectorAll(':checked').length+' / '+rows.length+(can?'':'（只能在当天打勾）');
+    rows.forEach(p=>{
+      const l=el('label'),c=el('input');c.type='checkbox';c.checked=p.present;c.disabled=!can;
+      c.onchange=async()=>{
+        c.disabled=true;$('amsg').textContent='保存中…';
+        try{await rpc('attendance_mark',{p_day:cur.d,p_slot:cur.key,p_player:p.pid,p_present:c.checked,p_code:teamCode()});if(att===cur){count();$('amsg').textContent+='，已保存'}}
+        catch(e){c.checked=!c.checked;if(att===cur)$('amsg').textContent=attErr(e)}
+        c.disabled=false;
+      };
+      l.append(c,p.pname);list.append(l);
+    });
+    $('acodebox').hidden=true;$('aopen').hidden=true;count();
+    if(!rows.length)$('amsg').textContent='名单是空的，请先在 Supabase 加入球员。';
+  }catch(e){if(att===cur){$('amsg').textContent=attErr(e);$('acodebox').hidden=!!session;$('aopen').hidden=false}}
+}
+$('aform').onsubmit=ev=>{ev.preventDefault();if(cloud)loadAtt()};
+$('aclose').onclick=()=>$('att').close();
 
 const ready=()=>weeks.forEach(w=>$('n-'+w).disabled=false);
 build();show();
