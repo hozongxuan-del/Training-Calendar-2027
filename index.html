@@ -147,7 +147,7 @@ function defaults(d){
   if(wd===0) return {rest:false,time:'',match:true,mtime:'19:00–22:00',note:''};
   return {rest:false,time:end?'19:00–22:00':'17:00–19:30',match:wd===5,mtime:wd===5?'19:00–22:00':'',note:''};
 }
-const info=d=>({loc:PLACE,mloc:'',extra:[],...defaults(d),...(days[d]||{})});
+const info=d=>({loc:PLACE,mloc:PLACE,extra:[],...defaults(d),...(days[d]||{})});
 
 function fillDay(b,d){
   const x=info(d), wd='日一二三四五六'[new Date(parse(d)).getUTCDay()];
@@ -233,10 +233,10 @@ function addRow(e){
 }
 $('addslot').onclick=()=>addRow({id:'x'+Date.now().toString(36),label:'加练',time:'',loc:PLACE});
 const readRows=()=>[...document.querySelectorAll('.xrow')].map(r=>{const o={id:r.dataset.id};r.querySelectorAll('input').forEach(i=>o[i.name]=i.value.trim());return o}).filter(o=>o.time);
-function setForm(x){$('f-loc').value=x.loc??PLACE;$('f-mloc').value=x.mloc||'';$('extras').textContent='';(x.extra||[]).forEach(addRow);$('f-rest').checked=!!x.rest;$('f-time').value=x.time||'';$('f-match').checked=!!x.match;$('f-mtime').value=x.mtime||'';$('f-note').value=x.note||''}
+function setForm(x){$('f-loc').value=x.loc??PLACE;$('f-mloc').value=x.mloc??PLACE;$('extras').textContent='';(x.extra||[]).forEach(addRow);$('f-rest').checked=!!x.rest;$('f-time').value=x.time||'';$('f-match').checked=!!x.match;$('f-mtime').value=x.mtime||'';$('f-note').value=x.note||''}
 function openDay(d){editing=d;$('dtitle').textContent=short(d)+' 周'+'日一二三四五六'[new Date(parse(d)).getUTCDay()];$('derr').textContent=cloud?(session?'':'只有登入后才能保存'):(db||local?'':'还在读取资料，暂时不能保存');setForm(info(d));$('dlg').showModal()}
 $('cancel').onclick=()=>$('dlg').close();
-$('reset').onclick=()=>setForm({loc:PLACE,...defaults(editing)});
+$('reset').onclick=()=>setForm({loc:PLACE,mloc:PLACE,...defaults(editing)});
 $('form').onsubmit=async ev=>{
   ev.preventDefault();
   if(!db&&!local&&!cloud)return;
