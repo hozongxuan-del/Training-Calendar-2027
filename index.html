@@ -3,383 +3,434 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<style>body{margin:0;font-size:14px}[hidden]{display:none!important}:root{color-scheme:light}</style>
-<title>排球练球日历</title>
+<title>一中男排 2027 练球时间表</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
 <style>
-/* layout: 月份切换 + 一周一张卡：7 天格子，下面是本周训练备注；手机上天数改为竖排 */
-:root{--bg:#eef2f6;--card:#fff;--fg:#14233b;--muted:#5b6a80;--line:#d5dde8;--court:#1f5fae;--court-soft:#e3eefb;--match:#9a5b00;--match-soft:#fdedc8;--off:#e9edf2;--hol:#a02c4c;--font:"Noto Sans SC",system-ui,sans-serif;--num:"Barlow Condensed","Noto Sans SC",sans-serif}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1522;--card:#172134;--fg:#e7edf6;--muted:#9aabc2;--line:#2b3a53;--court:#7fb2f5;--court-soft:#1d3454;--match:#ffcc66;--match-soft:#42330f;--off:#121b2b;--hol:#ff93ad;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0e1522;--card:#172134;--fg:#e7edf6;--muted:#9aabc2;--line:#2b3a53;--court:#7fb2f5;--court-soft:#1d3454;--match:#ffcc66;--match-soft:#42330f;--off:#121b2b;--hol:#ff93ad;color-scheme:dark}
+:root{--bg:#f1f4f9;--card:#fff;--fg:#12203a;--muted:#617089;--line:#dbe2ec;--navy:#0f2a5c;--blue:#1c5bb8;--blue-soft:#e6effc;--gold:#ffc933;--gold-soft:#fff1c9;--gold-ink:#7a4b00;--red:#b3264a;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1220;--card:#151f33;--fg:#e8eef8;--muted:#98a8c2;--line:#27354f;--navy:#13306a;--blue:#8dbcff;--blue-soft:#1b3157;--gold:#ffc933;--gold-soft:#443512;--gold-ink:#ffd976;--red:#ff91aa;color-scheme:dark}}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--font);line-height:1.5;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-main{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
-h1{margin:0;font-size:28px;line-height:1.2}
-p{margin:0}
-.sub,.status{color:var(--muted)}
-nav{display:flex;flex-wrap:wrap;gap:6px}
-button{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
-nav button[aria-pressed="true"]{background:var(--court);border-color:var(--court);color:var(--card);font-weight:700}
-:focus-visible{outline:3px solid var(--court);outline-offset:2px}
-.week{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
-.week.now{border:2px solid var(--court)}
-.whead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
-h2{margin:0;font:700 22px var(--num);letter-spacing:.02em}
-.whead span{color:var(--muted);font-size:13px}
-.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
-.day{display:flex;flex-direction:column;align-items:stretch;gap:4px;text-align:left;padding:8px;min-height:112px;background:var(--card)}
-.day{border:1px solid var(--line);border-radius:6px}
-button.slot{display:block;width:100%;text-align:left;border:0;padding:3px 6px;font-size:12px;line-height:1.4}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 "Noto Sans SC",system-ui,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px}
+header{background:var(--navy);color:#fff;border-bottom:5px solid var(--gold);padding-block:24px}
+header h1{margin:0;font-size:clamp(23px,5vw,36px);font-weight:900;line-height:1.25;text-wrap:balance}
+header p{margin:4px 0 0;color:#c5d4f2;font-size:13px;letter-spacing:.2em}
+main{display:flex;flex-direction:column;gap:14px;padding-block:16px 40px}
+h2{margin:0;font-size:17px}
+button{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+button:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.primary{background:var(--blue);border-color:var(--blue);color:var(--card);font-weight:700}
+.status{margin:0;color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.comp{display:flex;gap:14px;align-items:center}
+.count{flex:none;min-width:88px;text-align:center;background:var(--gold);color:#2b1b00;border-radius:10px;padding:8px 10px;font:700 42px/1 "Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums}
+.count small{display:block;font:700 12px "Noto Sans SC",sans-serif;margin-top:2px}
+.comp>div{min-width:0;flex:1;overflow-wrap:anywhere}
+.comp b{display:block;font-size:17px}
+.comp>div>span{color:var(--muted);font-size:13px}
+.comp.later .count{background:var(--gold-soft);color:var(--gold-ink);font-size:26px}
+.month{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.month h2{font-size:20px}
+#view{display:flex;flex-direction:column;gap:12px}
+.date{font:700 22px/1.1 "Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums}
+.date small{display:block;font:500 12px "Noto Sans SC",sans-serif;color:var(--muted)}
+button.slot{display:block;width:100%;text-align:left;border:0;background:var(--blue-soft);color:var(--blue);font-size:12px;line-height:1.4;padding:6px 8px}
+button.slot.m{background:var(--gold-soft);color:var(--gold-ink)}
 button.slot:hover{outline:2px solid currentColor}
-button.slot small{display:block;font-size:11px}
-.edit{margin-top:auto;font-size:12px;padding:2px 6px}
-.xrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;border:1px solid var(--line);border-radius:6px;padding:8px}
-dialog{max-height:calc(100dvh - 32px);overflow:auto}
-#alist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}
-#alist label{flex-direction:row;justify-content:flex-start;align-items:center;gap:8px;font-weight:400;font-size:15px;padding:6px 0}
-#alist input{width:20px;height:20px}
-.day.past{background:var(--off);color:var(--muted)}
-.day.today{box-shadow:inset 0 0 0 2px var(--court)}
-.date{font:600 18px var(--num);font-variant-numeric:tabular-nums}
-.date small{font:12px var(--font);color:var(--muted);margin-left:4px}
-.slot{border-radius:4px;padding:3px 6px;font-size:12px;background:var(--court-soft);color:var(--court);font-weight:500}
-.slot b{display:block;font:700 16px var(--num);font-variant-numeric:tabular-nums;white-space:nowrap}
-.slot.m{background:var(--match-soft);color:var(--match)}
-.slot.r{background:var(--off);color:var(--muted)}
-.hol{font-size:11px;color:var(--hol)}
-.dnote{font-size:12px;overflow-wrap:anywhere}
-label{font-weight:700;font-size:14px;display:flex;justify-content:space-between;gap:8px}
-label output{font-weight:400;color:var(--muted);font-size:12px}
-textarea,input[type=text],input[type=email],input[type=password]{font:inherit;width:100%;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px}
-textarea{min-height:76px;resize:vertical}
-dialog{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:10px;width:min(420px,calc(100vw - 32px));padding:16px}
-dialog::backdrop{background:#0008}
+.slot b{display:block;font:700 18px "Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums}
+.slot span{display:block}
+.tag{font-size:12px;border-radius:6px;padding:3px 8px;background:var(--bg);color:var(--muted);overflow-wrap:anywhere}
+.tag.c{background:var(--gold);color:#2b1b00;font-weight:700}
+.tag.h{color:var(--red)}
+/* 球员版：一天一行 */
+.row-day{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px}
+.row-day.today{border:2px solid var(--blue)}
+.slots{display:flex;flex-direction:column;gap:8px;min-width:0}
+.row-day .slot{font-size:14px;padding:10px 12px}
+.row-day .slot b{font-size:23px}
+/* 教练版：一周一张卡 */
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.day{display:flex;flex-direction:column;gap:5px;border:1px solid var(--line);border-radius:8px;padding:7px;min-width:0}
+.day.past{background:var(--bg)}
+.day.today{border:2px solid var(--blue)}
+.edit{margin-top:auto;font-size:12px;padding:3px}
+label{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:13px}
+label.chk,#alist label{flex-direction:row;align-items:center;gap:8px}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;width:100%;min-width:0}
+input[type=checkbox]{width:20px;height:20px;flex:none}
+textarea{min-height:72px;resize:vertical}
+.times{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+fieldset{border:1px solid var(--line);border-radius:10px;margin:0;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+dialog{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:14px;width:min(440px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:16px}
+dialog::backdrop{background:#0009}
 dialog form{display:flex;flex-direction:column;gap:10px}
-dialog label{flex-direction:column;gap:4px}
-dialog label.chk{flex-direction:row;justify-content:flex-start;align-items:center}
-.row{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
-.primary{background:var(--court);border-color:var(--court);color:var(--card);font-weight:700}
-@media (max-width:760px){.days{grid-template-columns:minmax(0,1fr)}.day{min-height:0;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px}button.slot{width:auto}.edit{margin:0 0 0 auto}.date{width:76px}.slot b{display:inline;margin-right:6px}}
+.actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+#alist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#alist label{font-weight:500;font-size:15px;border:1px solid var(--line);border-radius:8px;padding:10px}
+#alist label:has(:checked){background:var(--blue-soft);border-color:var(--blue)}
+footer{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding-top:12px}
+footer button{font-size:12px;color:var(--muted);background:none}
+@media (max-width:760px){.days{grid-template-columns:minmax(0,1fr)}.edit{margin:0}}
 </style>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
 </head>
 <body>
-<main>
-  <header>
-    <h1>排球练球日历</h1>
-    <p class="sub">2026年11月 – 2027年4月比赛。周一至五 17:00–19:30，周末 19:00–22:00，周五和周日 19:00–22:00 友谊赛。点时间段打考勤。</p>
-  </header>
-  <p class="status" id="status" role="status">正在读取已保存的备注…</p>
-  <div id="auth" hidden>
+<header><div class="wrap"><h1>一中男排 2027 练球时间表</h1><p>一起练 · 一起拼</p></div></header>
+<main class="wrap">
+  <p class="status" id="status" role="status">读取中…</p>
+  <section class="card" id="compbox" hidden>
+    <div class="bar"><h2>接下来的比赛</h2><button type="button" id="addcomp" hidden>＋ 添加比赛</button></div>
+    <div id="comps" style="display:flex;flex-direction:column;gap:10px"></div>
+  </section>
+  <nav class="month" aria-label="切换月份"><button type="button" id="prev" aria-label="上个月">◀</button><h2 id="mname"></h2><button type="button" id="next" aria-label="下个月">▶</button></nav>
+  <div id="view"></div>
+  <footer>
     <button type="button" id="loginbtn">教练登入</button>
     <button type="button" id="logoutbtn" hidden>登出</button>
     <button type="button" id="upload" hidden>把这台设备的旧备注上传</button>
-  </div>
-  <nav id="months" aria-label="选择月份"></nav>
-  <div id="weeks" style="display:flex;flex-direction:column;gap:16px"></div>
+  </footer>
 </main>
-<dialog id="att" aria-labelledby="atitle">
-  <form id="aform">
-    <h2 id="atitle">考勤</h2>
-    <p class="status" id="ainfo"></p>
-    <div id="acodebox"><label for="a-code">球队密码<input type="password" id="a-code" autocomplete="off"></label></div>
-    <div id="alist"></div>
-    <p class="status" id="amsg" role="status"></p>
-    <div class="row"><button type="button" id="aclose">关闭</button><button type="submit" class="primary" id="aopen">查看名单</button></div>
-  </form>
-</dialog>
-<dialog id="login" aria-labelledby="ltitle">
-  <form id="lform">
-    <h2 id="ltitle">教练登入</h2>
-    <label for="l-email">Email<input type="email" id="l-email" autocomplete="username" required></label>
-    <label for="l-pass">密码<input type="password" id="l-pass" autocomplete="current-password" required></label>
-    <p class="status" id="lerr" role="alert"></p>
-    <div class="row"><button type="button" id="lcancel">取消</button><button type="submit" class="primary">登入</button></div>
-  </form>
-</dialog>
-<dialog id="dlg" aria-labelledby="dtitle">
-  <form id="form">
-    <h2 id="dtitle"></h2>
-    <label class="chk"><input type="checkbox" id="f-rest"> 当天休息</label>
-    <label for="f-time">练球时间（留空 = 不练球）<input type="text" id="f-time" maxlength="40"></label>
-    <label for="f-loc">练球地点<input type="text" id="f-loc" maxlength="60"></label>
-    <label class="chk"><input type="checkbox" id="f-match"> 有友谊赛</label>
-    <label for="f-mtime">友谊赛时间或对手<input type="text" id="f-mtime" maxlength="60"></label>
-    <label for="f-mloc">友谊赛地点<input type="text" id="f-mloc" maxlength="60"></label>
-    <div id="extras" style="display:flex;flex-direction:column;gap:8px"></div>
-    <button type="button" id="addslot">＋ 加时间段</button>
-    <label for="f-note">当天备注<textarea id="f-note" maxlength="500"></textarea></label>
-    <p class="status" id="derr" role="alert"></p>
-    <div class="row">
-      <button type="button" id="reset">恢复默认</button>
-      <button type="button" id="cancel">取消</button>
-      <button type="submit" class="primary">保存</button>
-    </div>
-  </form>
-</dialog>
+
+<dialog id="att" aria-labelledby="atitle"><form id="aform">
+  <h2 id="atitle"></h2><p class="status" id="ainfo"></p>
+  <div id="acodebox"><label>球队密码<input type="password" id="a-code" autocomplete="off"></label></div>
+  <div id="alist"></div><p class="status" id="amsg" role="status"></p>
+  <div class="actions"><button type="button" data-close>关闭</button><button type="submit" class="primary" id="aopen">查看名单</button></div>
+</form></dialog>
+
+<dialog id="login" aria-labelledby="ltitle"><form id="lform">
+  <h2 id="ltitle">教练登入</h2>
+  <label>Email<input type="email" id="l-email" autocomplete="username" required></label>
+  <label>密码<input type="password" id="l-pass" autocomplete="current-password" required></label>
+  <p class="status" id="lerr" role="alert"></p>
+  <div class="actions"><button type="button" data-close>取消</button><button type="submit" class="primary">登入</button></div>
+</form></dialog>
+
+<dialog id="dlg" aria-labelledby="dtitle"><form id="dform">
+  <h2 id="dtitle"></h2>
+  <label class="chk"><input type="checkbox" id="f-rest">当天休息</label>
+  <fieldset><label class="chk"><input type="checkbox" id="f-on">练球</label><div class="times" id="f-t"></div><label>地点<input id="f-loc" maxlength="60"></label></fieldset>
+  <fieldset><label class="chk"><input type="checkbox" id="f-match">友谊赛</label><div class="times" id="f-mt"></div><label>对手（可留空）<input id="f-opp" maxlength="60"></label><label>地点<input id="f-mloc" maxlength="60"></label></fieldset>
+  <div id="extras" style="display:flex;flex-direction:column;gap:8px"></div>
+  <button type="button" id="addslot">＋ 加时间段</button>
+  <label>当天备注（只在教练版显示）<textarea id="f-note" maxlength="500"></textarea></label>
+  <p class="status" id="derr" role="alert"></p>
+  <div class="actions"><button type="button" id="reset">恢复默认</button><button type="button" data-close>取消</button><button type="submit" class="primary">保存</button></div>
+</form></dialog>
+
+<dialog id="cdlg" aria-labelledby="ctitle"><form id="cform">
+  <h2 id="ctitle">比赛</h2>
+  <label>日期<input type="date" id="c-date" min="2026-11-26" max="2027-12-31" required></label>
+  <label>比赛名称<input id="c-name" maxlength="60" required></label>
+  <label>地点（可留空）<input id="c-place" maxlength="60"></label>
+  <p class="status" id="cerr" role="alert"></p>
+  <div class="actions"><button type="button" id="c-del">删除比赛</button><button type="button" data-close>取消</button><button type="submit" class="primary">保存</button></div>
+</form></dialog>
+
 <script>
-/* ===== Supabase 设定：把两个值填在引号里面 ===== */
+/* ===== Supabase 设定 ===== */
 const SB_URL = 'https://ihfgmukwbjnbutqeuiuj.supabase.co';   // 例如 https://abcdxyz.supabase.co
 const SB_KEY = 'sb_publishable_cYoSqgMQJSwYgUC-Tsvwng_fkTkFck4';   // Publishable key (sb_publishable_...)。绝对不要放 secret key
-/* ============================================== */
+/* ========================= */
 (()=>{
 const $=id=>document.getElementById(id);
 const DAY=864e5, parse=s=>Date.parse(s+'T00:00:00Z'), iso=t=>new Date(t).toISOString().slice(0,10);
-const n=new Date(), today=iso(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate()));
-const START='2026-11-23', FROM='2026-11-26', WEEKS=23;
-const HOL={};
-const span=(a,b,name)=>{for(let t=parse(a);t<=parse(b);t+=DAY){const k=iso(t);HOL[k]=HOL[k]?HOL[k]+'、'+name:name}};
-span('2026-12-05','2027-01-03','学校假期');span('2026-12-25','2026-12-25','圣诞节');span('2027-01-01','2027-01-01','元旦');
-span('2027-02-05','2027-02-05','学校假期');span('2027-02-06','2027-02-07','农历新年');span('2027-02-09','2027-02-12','学校假期');
-span('2027-03-06','2027-03-14','学校假期');span('2027-03-10','2027-03-11','开斋节(暂定)');span('2027-03-26','2027-03-26','Good Friday');span('2027-05-01','2027-05-01','劳动节');
-const phase=w=>w<'2027-01-04'?'招集与假期':w<'2027-02-08'?'基础期':w<'2027-03-15'?'维持与战术期':w<'2027-04-05'?'爆发力期':w<'2027-04-19'?'专项期':w<'2027-04-26'?'减量周':'比赛周(暂定)';
-const weeks=Array.from({length:WEEKS},(_,i)=>iso(parse(START)+i*7*DAY));
-const notes={}, days={};
-let db=null, local=false, month=today<'2026-12-01'?'2026-11':today.slice(0,7);
-const months=['all','2026-11','2026-12','2027-01','2027-02','2027-03','2027-04'];
-if(!months.includes(month))month='all';
-const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e};
+const todayMY=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuching'}).format(new Date());
+const FROM='2026-11-26', END='2027-12-31', FIRST='2026-11', LAST='2027-12', PLACE='一中排球场';
 const short=d=>+d.slice(8)+'/'+ +d.slice(5,7);
+const wk=d=>'周'+'日一二三四五六'[new Date(parse(d)).getUTCDay()];
+const monday=d=>iso(parse(d)-((new Date(parse(d)).getUTCDay()+6)%7)*DAY);
+const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e};
+const btn=(cls,text,fn)=>{const b=el('button',cls,text);b.type='button';b.onclick=fn;return b};
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 
-const PLACE='一中排球场';
+/* 学校假期与公共假期（教练版显示） */
+const HOL={};
+const span=(a,b,n)=>{for(let t=parse(a);t<=parse(b);t+=DAY){const k=iso(t);HOL[k]=HOL[k]?HOL[k]+'、'+n:n}};
+[['2026-12-05','2027-01-03','学校假期'],['2026-12-25','2026-12-25','圣诞节'],['2027-01-01','2027-01-01','元旦'],['2027-02-05','2027-02-05','学校假期'],['2027-02-06','2027-02-07','农历新年'],['2027-02-09','2027-02-12','学校假期'],['2027-03-06','2027-03-14','学校假期'],['2027-03-10','2027-03-11','开斋节(暂定)'],['2027-03-26','2027-03-26','Good Friday'],['2027-05-01','2027-05-01','劳动节'],['2027-05-17','2027-05-17','哈芝节(暂定)'],['2027-05-18','2027-05-19','学校假期'],['2027-05-20','2027-05-20','卫塞节'],['2027-05-21','2027-06-06','学校假期'],['2027-06-01','2027-06-02','达雅节'],['2027-06-07','2027-06-07','元首诞辰'],['2027-07-22','2027-07-22','砂拉越日'],['2027-08-28','2027-09-05','学校假期'],['2027-08-31','2027-08-31','国庆日'],['2027-09-16','2027-09-16','马来西亚日'],['2027-10-09','2027-10-09','州元首诞辰'],['2027-10-28','2027-10-28','学校假期'],['2027-12-04','2027-12-31','学校假期'],['2027-12-25','2027-12-25','圣诞节']].forEach(x=>span(...x));
+
+/* 默认时间表 */
 function defaults(d){
-  const wd=new Date(parse(d)).getUTCDay(), end=wd===0||wd===6;
-  if(d<FROM) return {rest:false,time:'',match:false,mtime:'',note:''};
-  if(wd===0) return {rest:false,time:'',match:true,mtime:'19:00–22:00',note:''};
-  return {rest:false,time:end?'19:00–22:00':'17:00–19:30',match:wd===5,mtime:wd===5?'19:00–22:00':'',note:''};
+  const w=new Date(parse(d)).getUTCDay(), on=d>=FROM&&d<=END, end=w===0||w===6;
+  return {rest:false,time:on&&w!==0?(end?'19:00–22:00':'17:00–19:30'):'',loc:PLACE,match:on&&(w===0||w===5),mtime:'19:00–22:00',opp:'',mloc:PLACE,extra:[],note:''};
 }
-const info=d=>({loc:PLACE,mloc:PLACE,extra:[],...defaults(d),...(days[d]||{})});
-
-function fillDay(b,d){
-  const x=info(d), wd='日一二三四五六'[new Date(parse(d)).getUTCDay()];
-  b.textContent='';
-  b.className='day'+(d<today?' past':'')+(d===today?' today':'');
-  const h=el('span','date',short(d));h.append(el('small','','周'+wd));b.append(h);
-  const slot=(key,cls,label,time,place)=>{
-    const t=el('button','slot '+cls);t.type='button';
-    if(time)t.append(el('b','',time));t.append(label);if(place)t.append(el('small','','@ '+place));
-    t.onclick=()=>openAtt(d,key,label,time,place);b.append(t);
-  };
-  if(x.rest) b.append(el('span','slot r','休息'));
-  else{
-    if(x.time) slot('practice','','练球',x.time,x.loc);
-    if(x.match) slot('match','m','友谊赛',x.mtime,x.mloc);
-    (x.extra||[]).forEach(e=>slot(e.id,'',e.label||'练球',e.time,e.loc));
-  }
-  if(HOL[d]) b.append(el('span','hol',HOL[d]));
-  if(x.note) b.append(el('span','dnote',x.note));
-  const ed=el('button','edit','编辑 / 加时段');ed.type='button';ed.id='e-'+d;ed.onclick=()=>openDay(d);b.append(ed);
+const times=s=>(String(s||'').match(/\d{1,2}:\d{2}/g)||[]).map(t=>t.padStart(5,'0'));
+function info(d){
+  const x={...defaults(d),...(days[d]||{})};
+  if(x.opp===''&&days[d]&&days[d].opp===undefined)x.opp=String(days[d].mtime||'').replace(/\d{1,2}:\d{2}|[–—~-]|晚上/g,'').trim();
+  return x;
+}
+/* 当天所有时间段，按开始时间排序 */
+function slotsOf(d){
+  const x=info(d), out=[];
+  if(x.rest)return out;
+  if(x.time)out.push({key:'practice',label:'练球',time:x.time,place:x.loc});
+  if(x.match)out.push({key:'match',label:x.opp?'友谊赛 · '+x.opp:'友谊赛',time:times(x.mtime).join('–'),place:x.mloc,m:true});
+  (x.extra||[]).forEach(e=>out.push({key:e.id,label:e.label||'练球',time:e.time,place:e.loc}));
+  const start=s=>times(s.time)[0]||'99';
+  return out.sort((a,b)=>start(a).localeCompare(start(b)));
 }
 
-function build(){
-  const root=$('weeks');
-  weeks.forEach(w=>{
-    const c=el('section','week');c.dataset.w=w;
-    if(today>=w&&today<=iso(parse(w)+6*DAY))c.classList.add('now');
-    const head=el('div','whead');
-    head.append(el('h2','',short(w)+' – '+short(iso(parse(w)+6*DAY))),el('span','',phase(w)+(c.classList.contains('now')?' · 本周':'')));
-    const g=el('div','days');
-    for(let i=0;i<7;i++){const d=iso(parse(w)+i*DAY),b=el('div');b.id='d-'+d;fillDay(b,d);g.append(b)}
-    const lab=el('label','','本周训练内容');lab.htmlFor='n-'+w;
-    const out=el('output');out.id='s-'+w;lab.append(out);
-    const ta=el('textarea');ta.id='n-'+w;ta.maxLength=3000;ta.placeholder='写下这个礼拜要练什么';
-    ta.disabled=true;
-    ta.oninput=()=>queue(w,ta.value);
-    ta.onblur=()=>flush(w);
-    c.append(head,g,lab,ta);root.append(c);
-  });
-}
-
-function show(){
-  document.querySelectorAll('.week').forEach(c=>{
-    const w=c.dataset.w,e=iso(parse(w)+6*DAY);
-    c.hidden=month!=='all'&&w.slice(0,7)!==month&&e.slice(0,7)!==month;
-  });
-  const nav=$('months');nav.textContent='';
-  months.forEach(m=>{const b=el('button','',m==='all'?'全部':+m.slice(5)+'月');b.type='button';b.setAttribute('aria-pressed',m===month);b.onclick=()=>{month=m;show()};nav.append(b)});
-}
-
-/* storage */
-const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}},set(k,v){localStorage.setItem(k,JSON.stringify(v))}};
-async function write(col,id,data){
-  if(cloud){await cloudSave([{kind:col,id,data}]);writes++;return}
-  if(local){store.set('vb-'+col,col==='weeks'?Object.fromEntries(Object.entries({...notes,[id]:data.note}).map(([k,v])=>[k,{note:v}])):{...days,[id]:data});return}
-  const ref=db.doc(col+'/'+id);
-  try{await ref.set(data)}catch(e){if(e.code!=='unavailable')throw e;await new Promise(r=>setTimeout(r,800+Math.random()*800));await ref.set(data)}
-}
-const why=e=>e&&e.code==='login'?'请先登入':e&&e.code==='invalid_argument'?'没有编辑权限，未保存':'保存失败，请再试一次';
-
-const pending={}, timers={}, busy={};
-function queue(w,v){pending[w]=v;$('s-'+w).textContent='未保存';clearTimeout(timers[w]);timers[w]=setTimeout(()=>flush(w),900)}
-async function flush(w){
-  clearTimeout(timers[w]);
-  if(busy[w]||pending[w]===undefined)return;
-  busy[w]=true;
-  while(pending[w]!==undefined){
-    const v=pending[w];$('s-'+w).textContent='保存中…';
-    try{await write('weeks',w,{note:v});notes[w]=v;if(pending[w]===v){delete pending[w];$('s-'+w).textContent='已保存'}}
-    catch(e){$('s-'+w).textContent=why(e);break}
-  }
-  busy[w]=false;
-}
-function paintNotes(){weeks.forEach(w=>{const t=$('n-'+w);if(pending[w]===undefined&&document.activeElement!==t)t.value=notes[w]||''})}
-function paintDays(){weeks.forEach(w=>{for(let i=0;i<7;i++){const d=iso(parse(w)+i*DAY);fillDay($('d-'+d),d)}})}
-
-/* day editor */
-let editing=null;
-function addRow(e){
-  const r=el('div','xrow');r.dataset.id=e.id;
-  [['label','名称',e.label],['time','时间，例如 08:00–10:00',e.time],['loc','地点',e.loc]].forEach(([k,h,v])=>{const i=el('input');i.type='text';i.maxLength=60;i.name=k;i.placeholder=h;i.setAttribute('aria-label',h);i.value=v||'';r.append(i)});
-  const x=el('button','','删除此时段');x.type='button';x.onclick=()=>r.remove();r.append(x);$('extras').append(r);
-}
-$('addslot').onclick=()=>addRow({id:'x'+Date.now().toString(36),label:'加练',time:'',loc:PLACE});
-const readRows=()=>[...document.querySelectorAll('.xrow')].map(r=>{const o={id:r.dataset.id};r.querySelectorAll('input').forEach(i=>o[i.name]=i.value.trim());return o}).filter(o=>o.time);
-function setForm(x){$('f-loc').value=x.loc??PLACE;$('f-mloc').value=x.mloc??PLACE;$('extras').textContent='';(x.extra||[]).forEach(addRow);$('f-rest').checked=!!x.rest;$('f-time').value=x.time||'';$('f-match').checked=!!x.match;$('f-mtime').value=x.mtime||'';$('f-note').value=x.note||''}
-function openDay(d){editing=d;$('dtitle').textContent=short(d)+' 周'+'日一二三四五六'[new Date(parse(d)).getUTCDay()];$('derr').textContent=cloud?(session?'':'只有登入后才能保存'):(db||local?'':'还在读取资料，暂时不能保存');setForm(info(d));$('dlg').showModal()}
-$('cancel').onclick=()=>$('dlg').close();
-$('reset').onclick=()=>setForm({loc:PLACE,mloc:PLACE,...defaults(editing)});
-$('form').onsubmit=async ev=>{
-  ev.preventDefault();
-  if(!db&&!local&&!cloud)return;
-  if(cloud&&!session){$('derr').textContent='请先登入';return}
-  const d=editing,x={rest:$('f-rest').checked,time:$('f-time').value.trim(),match:$('f-match').checked,mtime:$('f-mtime').value.trim(),note:$('f-note').value.trim(),loc:$('f-loc').value.trim(),mloc:$('f-mloc').value.trim(),extra:readRows()};
-  if([...document.querySelectorAll('.xrow input[name=time]')].some(i=>!i.value.trim())){$('derr').textContent='新时间段要填时间';return}
-  $('derr').textContent='保存中…';
-  try{await write('days',d,x);days[d]=x;fillDay($('d-'+d),d);$('dlg').close()}catch(e){$('derr').textContent=why(e)}
-};
-
-/* Supabase 同步 */
+/* Supabase */
 const cloud=!!(SB_URL&&SB_KEY)&&!SB_KEY.startsWith('sb_secret_');
 const base=SB_URL.trim().replace(/\/(rest\/v1)?\/?$/,'');
-let session=cloud?store.get('vb-session'):null, writes=0, loaded=false, refreshing=null;
-const fail=(code,status)=>Object.assign(new Error(code),{code,status});
-async function api(path,opt={},token){
+const notes={}, days={};
+let session=store.get('vb-session'), writes=0, loaded=false, refreshing=null, last='';
+let today=todayMY(), month=today.slice(0,7);
+if(month<FIRST)month=FIRST;if(month>LAST)month=LAST;
+const fail=(code,extra)=>Object.assign(new Error(code),{code},extra);
+async function api(path,opt={},tok){
   const headers={apikey:SB_KEY,'Content-Type':'application/json',...(opt.headers||{})};
-  if(token)headers.Authorization='Bearer '+token;
+  if(tok)headers.Authorization='Bearer '+tok;
   const r=await fetch(base+path,{...opt,headers});
-  if(!r.ok){const b=await r.json().catch(()=>({}));throw Object.assign(fail(r.status===401||r.status===403?'invalid_argument':'http',r.status),{detail:b.message||''})}
+  if(!r.ok){const b=await r.json().catch(()=>({}));throw fail('http',{status:r.status,detail:b.message||''})}
   const t=await r.text();return t?JSON.parse(t):null;
 }
 function setSession(a){
   session=a?{access:a.access_token,refresh:a.refresh_token,exp:Date.now()+a.expires_in*1000}:null;
-  try{store.set('vb-session',session)}catch{}
-  authUI();
+  store.set('vb-session',session);render();
 }
 async function token(){
   if(!session)throw fail('login');
   if(Date.now()>session.exp-60000){
     refreshing=refreshing||api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh})})
-      .then(setSession,e=>{if(e.status>=400&&e.status<500){setSession(null);throw fail('login')}throw e})
-      .finally(()=>refreshing=null);
+      .then(setSession,e=>{if(e.status>=400&&e.status<500){setSession(null);throw fail('login')}throw e}).finally(()=>refreshing=null);
     await refreshing;
   }
   return session.access;
 }
-async function cloudSave(rows){
+async function save(rows){
   const t=await token();
   await api('/rest/v1/calendar_entries?on_conflict=kind,id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows.map(r=>({...r,updated_at:new Date().toISOString()})))},t);
+  writes++;
+  rows.forEach(r=>{if(r.kind==='weeks')notes[r.id]=r.data.note;else days[r.id]=r.data});
 }
+const why=e=>e.code==='login'?'请先登入':e.status===401||e.status===403?'没有编辑权限，未保存':'保存失败，请再试一次';
 function localRows(){
   const rows=[];
   Object.entries(store.get('vb-weeks')||{}).forEach(([id,v])=>{if(v.note&&!notes[id])rows.push({kind:'weeks',id,data:{note:v.note}})});
   Object.entries(store.get('vb-days')||{}).forEach(([id,v])=>{if(!days[id])rows.push({kind:'days',id,data:v})});
   return rows;
 }
-function authUI(){
-  if(!cloud)return;
-  $('auth').hidden=false;$('loginbtn').hidden=!!session;$('logoutbtn').hidden=!session;
+
+/* 画面 */
+const pending={}, timers={}, busy={};
+function queue(w,v){pending[w]=v;$('s-'+w).textContent='未保存';clearTimeout(timers[w]);timers[w]=setTimeout(()=>flush(w),900)}
+async function flush(w){
+  clearTimeout(timers[w]);
+  if(busy[w]||pending[w]===undefined)return;
+  busy[w]=true;
+  const say=t=>{const o=$('s-'+w);if(o)o.textContent=t};
+  while(pending[w]!==undefined){
+    const v=pending[w];say('保存中…');
+    try{await save([{kind:'weeks',id:w,data:{note:v}}]);if(pending[w]===v){delete pending[w];say('已保存')}}
+    catch(e){say(why(e));break}
+  }
+  busy[w]=false;
+}
+function slotButton(d,s){
+  const b=btn('slot'+(s.m?' m':''),null,()=>openAtt(d,s));
+  b.append(el('b','',s.time||'时间待定'),el('span','',s.label));
+  if(s.place)b.append(el('span','','@ '+s.place));
+  return b;
+}
+function renderComps(){
+  const list=Object.keys(days).filter(d=>d>=today&&days[d].comp).sort();
+  $('compbox').hidden=!session&&!list.length;$('addcomp').hidden=!session;
+  const box=$('comps');box.textContent='';
+  if(!list.length)box.append(el('p','status','还没有比赛日期，按「添加比赛」加入。'));
+  list.forEach((d,i)=>{
+    const c=days[d].comp, n=Math.round((parse(d)-parse(today))/DAY), row=el('div','comp'+(i?' later':''));
+    const num=el('span','count',n?String(n):'今天');num.append(el('small','',n?'天后':'比赛'));
+    const t=el('div');t.append(el('b','',c.name),el('span','',[short(d)+'/'+d.slice(0,4)+' '+wk(d),c.place].filter(Boolean).join(' · ')));
+    row.append(num,t);
+    if(session)row.append(btn('','修改',()=>openComp(d)));
+    box.append(row);
+  });
+}
+function dateBox(d){const e=el('div','date',short(d));e.append(el('small','',wk(d)+(d===today?' · 今天':'')));return e}
+const monthDates=()=>{const out=[];for(let t=parse(month+'-01');iso(t).startsWith(month);t+=DAY)out.push(iso(t));return out};
+function renderPlayer(root){
+  monthDates().filter(d=>d>=today).forEach(d=>{
+    const list=slotsOf(d), comp=days[d]&&days[d].comp;
+    if(!list.length&&!comp)return;
+    const row=el('section','row-day'+(d===today?' today':'')), box=el('div','slots');
+    if(comp)box.append(el('span','tag c','比赛：'+comp.name));
+    list.forEach(s=>box.append(slotButton(d,s)));
+    row.append(dateBox(d),box);root.append(row);
+  });
+  if(!root.children.length)root.append(el('p','status','这个月没有接下来的练球。'));
+}
+function renderCoach(root){
+  [...new Set(monthDates().map(monday))].forEach(w=>{
+    const card=el('section','card'), g=el('div','days');
+    card.append(el('h2','',short(w)+' – '+short(iso(parse(w)+6*DAY))));
+    for(let i=0;i<7;i++){
+      const d=iso(parse(w)+i*DAY), x=info(d), c=el('div','day'+(d<today?' past':'')+(d===today?' today':''));c.id='d-'+d;
+      c.append(dateBox(d));
+      if(days[d]&&days[d].comp)c.append(el('span','tag c','比赛：'+days[d].comp.name));
+      if(x.rest)c.append(el('span','tag','休息'));
+      slotsOf(d).forEach(s=>c.append(slotButton(d,s)));
+      if(HOL[d])c.append(el('span','tag h',HOL[d]));
+      if(x.note)c.append(el('span','tag',x.note));
+      if(d>=FROM&&d<=END){const e=btn('edit','编辑 / 加时段',()=>openDay(d));e.id='e-'+d;c.append(e)}
+      g.append(c);
+    }
+    const lab=el('label','','本周训练内容'), ta=el('textarea'), out=el('span','status');
+    ta.id='n-'+w;ta.maxLength=3000;ta.placeholder='写下这个礼拜要练什么';ta.value=pending[w]??notes[w]??'';
+    ta.oninput=()=>queue(w,ta.value);ta.onblur=()=>flush(w);out.id='s-'+w;
+    lab.append(ta);card.append(g,lab,out);root.append(card);
+  });
+}
+function render(){
+  today=todayMY();
+  const min=session?FIRST:(today.slice(0,7)<FIRST?FIRST:today.slice(0,7));
+  if(month<min)month=min;if(month>LAST)month=LAST;
+  $('prev').disabled=month<=min;$('next').disabled=month>=LAST;
+  $('mname').textContent=month.slice(0,4)+'年 '+ +month.slice(5)+'月';
+  $('loginbtn').hidden=!!session;$('logoutbtn').hidden=!session;
   $('upload').hidden=!(session&&loaded&&localRows().length);
-  weeks.forEach(w=>{const t=$('n-'+w);t.disabled=!loaded;t.readOnly=!session;t.placeholder=session?'写下这个礼拜要练什么':''});
-  if(loaded)$('status').textContent=session?'已登入，备注会自动保存并同步。':'目前是查看模式，登入后才能修改。';
+  const root=$('view');root.textContent='';
+  if(!loaded)return;
+  renderComps();(session?renderCoach:renderPlayer)(root);
 }
-async function pull(){
-  const before=writes;
-  try{
-    const rows=await api('/rest/v1/calendar_entries?select=kind,id,data');
-    if(before!==writes)return;
-    [notes,days].forEach(o=>Object.keys(o).forEach(k=>delete o[k]));
-    rows.forEach(r=>{if(r.kind==='weeks')notes[r.id]=r.data.note;else days[r.id]=r.data});
-    loaded=true;paintNotes();paintDays();authUI();
-  }catch{$('status').textContent='读取云端资料失败，请检查网络和 Supabase 设定。'}
-}
-function startCloud(){
-  $('loginbtn').onclick=()=>{$('lerr').textContent='';$('login').showModal()};
-  $('lcancel').onclick=()=>$('login').close();
-  $('logoutbtn').onclick=()=>setSession(null);
-  $('lform').onsubmit=async ev=>{
-    ev.preventDefault();$('lerr').textContent='登入中…';
-    try{setSession(await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:$('l-email').value.trim(),password:$('l-pass').value})}));$('l-pass').value='';$('login').close();pull()}
-    catch{$('lerr').textContent='登入失败，请检查 email、密码和网络。'}
-  };
-  $('upload').onclick=async()=>{
-    try{await cloudSave(localRows());writes++;await pull()}catch(e){$('status').textContent=why(e)}
-  };
-  authUI();pull();
-  setInterval(()=>{if(!document.hidden)pull()},30000);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
-}
+const step=n=>{const d=new Date(parse(month+'-01'));d.setUTCMonth(d.getUTCMonth()+n);month=iso(d.getTime()).slice(0,7);render()};
+$('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 
 /* 考勤 */
 let att=null;
-const todayMY=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuching'}).format(new Date());
-const attErr=e=>({bad_code:'球队密码不对',not_today:'只能在当天打勾，补签请找教练',login:'登入已过期，请重新登入'})[e.detail||e.code]||'连接失败，请检查网络或 Supabase 设定';
+const attErr=e=>({bad_code:'球队密码不对',past_day:'过去的日期不能打勾，请找教练',not_today:'数据库还没更新，请教练执行新的 SQL',login:'登入已过期，请重新登入'})[e.detail||e.code]||'连接失败，请检查网络';
 async function rpc(fn,body){return api('/rest/v1/rpc/'+fn,{method:'POST',body:JSON.stringify(body)},session?await token():undefined)}
-const teamCode=()=>$('a-code').value.trim();
-function openAtt(d,key,label,time,place){
-  att={d,key,n:Symbol()};
-  $('atitle').textContent=short(d)+' '+label+'考勤';
-  $('ainfo').textContent=[time,place].filter(Boolean).join(' @ ');
+const code=()=>$('a-code').value.trim();
+function openAtt(d,s){
+  att={d,key:s.key,n:Symbol()};
+  $('atitle').textContent=short(d)+' '+wk(d)+' · '+s.label;
+  $('ainfo').textContent=[s.time,s.place].filter(Boolean).join(' @ ');
   $('alist').textContent='';$('amsg').textContent='';
-  if(!cloud){$('amsg').textContent='考勤需要先设定 Supabase。';$('acodebox').hidden=true;$('aopen').hidden=true;$('att').showModal();return}
   $('a-code').value=store.get('vb-code')||'';
   $('acodebox').hidden=!!session;$('aopen').hidden=false;$('att').showModal();
-  if(session||teamCode())loadAtt();
+  if(session||code())loadAtt();
 }
 async function loadAtt(){
   const cur=att;$('amsg').textContent='读取中…';
   try{
-    const rows=await rpc('attendance_list',{p_day:cur.d,p_slot:cur.key,p_code:teamCode()});
+    const rows=await rpc('attendance_list',{p_day:cur.d,p_slot:cur.key,p_code:code()});
     if(att!==cur)return;
-    if(!session)try{store.set('vb-code',teamCode())}catch{}
-    const can=!!session||cur.d===todayMY(), list=$('alist');list.textContent='';
-    const count=()=>$('amsg').textContent='出席 '+list.querySelectorAll(':checked').length+' / '+rows.length+(can?'':'（只能在当天打勾）');
+    if(!session)store.set('vb-code',code());
+    const can=!!session||cur.d>=todayMY(), list=$('alist');list.textContent='';
+    const count=extra=>$('amsg').textContent='出席 '+list.querySelectorAll(':checked').length+' / '+rows.length+(extra||'');
     rows.forEach(p=>{
       const l=el('label'),c=el('input');c.type='checkbox';c.checked=p.present;c.disabled=!can;
       c.onchange=async()=>{
         c.disabled=true;$('amsg').textContent='保存中…';
-        try{await rpc('attendance_mark',{p_day:cur.d,p_slot:cur.key,p_player:p.pid,p_present:c.checked,p_code:teamCode()});if(att===cur){count();$('amsg').textContent+='，已保存'}}
+        try{await rpc('attendance_mark',{p_day:cur.d,p_slot:cur.key,p_player:p.pid,p_present:c.checked,p_code:code()});if(att===cur)count(' · 已保存')}
         catch(e){c.checked=!c.checked;if(att===cur)$('amsg').textContent=attErr(e)}
         c.disabled=false;
       };
       l.append(c,p.pname);list.append(l);
     });
-    $('acodebox').hidden=true;$('aopen').hidden=true;count();
-    if(!rows.length)$('amsg').textContent='名单是空的，请先在 Supabase 加入球员。';
+    $('acodebox').hidden=true;$('aopen').hidden=true;count(can?'':'（过去的日期只能查看）');
   }catch(e){if(att===cur){$('amsg').textContent=attErr(e);$('acodebox').hidden=!!session;$('aopen').hidden=false}}
 }
-$('aform').onsubmit=ev=>{ev.preventDefault();if(cloud)loadAtt()};
-$('aclose').onclick=()=>$('att').close();
+$('aform').onsubmit=ev=>{ev.preventDefault();loadAtt()};
 
-const ready=()=>weeks.forEach(w=>$('n-'+w).disabled=false);
-build();show();
-(async()=>{
-  if(cloud){startCloud();return}
-  try{db=window.claude?await window.claude.use('db'):null}catch{db=null}
-  if(!db){
-    local=true;
-    Object.entries(store.get('vb-weeks')||{}).forEach(([k,v])=>notes[k]=v.note);
-    Object.assign(days,store.get('vb-days')||{});
-    paintNotes();paintDays();ready();
-    $('status').textContent='备注输入后会自动保存在这台设备的浏览器里。';return;
-  }
-  const got={};
-  const slow=setTimeout(()=>$('status').textContent='暂时读不到已保存的资料，请检查网络。',10000);
-  const sub=(col,apply)=>db.collection(col).onSnapshot(s=>{
-    apply(s.docs);
-    if(!s.metadata.fromCache){got[col]=1;if(got.weeks&&got.days){clearTimeout(slow);ready();$('status').textContent='备注输入后会自动保存。'}}
-  },()=>{clearTimeout(slow);$('status').textContent='读取资料失败，请重新打开页面。'});
-  sub('weeks',docs=>{Object.keys(notes).forEach(k=>delete notes[k]);docs.forEach(d=>notes[d.id]=d.data().note);paintNotes()});
-  sub('days',docs=>{Object.keys(days).forEach(k=>delete days[k]);docs.forEach(d=>days[d.id]=d.data());paintDays()});
-})();
+/* 时间选择（每 15 分钟） */
+const OPTIONS=Array.from({length:73},(_,i)=>{const m=360+i*15;return String(m/60|0).padStart(2,'0')+':'+String(m%60).padStart(2,'0')});
+function picker(box,value,a='17:00',b='19:30'){
+  box.textContent='';const v=times(value);
+  [['开始',v[0]||a],['结束',v[1]||b]].forEach(([name,val])=>{
+    const l=el('label','',name),s=el('select');
+    [...new Set([...OPTIONS,val])].sort().forEach(t=>s.add(new Option(t,t)));s.value=val;l.append(s);box.append(l);
+  });
+}
+const picked=box=>[...box.querySelectorAll('select')].map(s=>s.value);
+
+/* 编辑某一天 */
+let editing=null;
+function field(name,value){const l=el('label','',name),i=el('input');i.maxLength=60;i.value=value||'';l.append(i);return [l,i]}
+function addRow(e){
+  const f=el('fieldset','xrow');f.dataset.id=e.id;
+  const [nl,n]=field('名称',e.label),[pl,p]=field('地点',e.loc);n.name='label';p.name='loc';
+  const t=el('div','times');picker(t,e.time,'08:00','10:00');
+  f.append(nl,t,pl,btn('','删除此时间段',()=>f.remove()));$('extras').append(f);
+}
+function setForm(x){
+  const d=defaults(editing);
+  $('f-rest').checked=!!x.rest;$('f-on').checked=!!x.time;$('f-match').checked=!!x.match;
+  const wkend=[0,6].includes(new Date(parse(editing)).getUTCDay());
+  picker($('f-t'),x.time,wkend?'19:00':'17:00',wkend?'22:00':'19:30');
+  picker($('f-mt'),x.mtime||d.mtime,'19:00','22:00');
+  $('f-loc').value=x.loc??PLACE;$('f-opp').value=x.opp||'';$('f-mloc').value=x.mloc??PLACE;$('f-note').value=x.note||'';
+  $('extras').textContent='';(x.extra||[]).forEach(addRow);
+}
+function openDay(d){editing=d;$('dtitle').textContent=short(d)+' '+wk(d);$('derr').textContent='';setForm(info(d));$('dlg').showModal()}
+$('addslot').onclick=()=>addRow({id:'x'+Date.now().toString(36),label:'加练',time:'',loc:PLACE});
+$('reset').onclick=()=>setForm(defaults(editing));
+$('dform').onsubmit=async ev=>{
+  ev.preventDefault();
+  const rows=[...document.querySelectorAll('.xrow')];
+  const used=[$('f-on').checked&&$('f-t'),$('f-match').checked&&$('f-mt'),...rows.map(r=>r.querySelector('.times'))].filter(Boolean);
+  if(used.some(b=>{const [a,z]=picked(b);return z<=a})){$('derr').textContent='结束时间要比开始时间晚';return}
+  const x={rest:$('f-rest').checked,time:$('f-on').checked?picked($('f-t')).join('–'):'',loc:$('f-loc').value.trim(),
+    match:$('f-match').checked,mtime:picked($('f-mt')).join('–'),opp:$('f-opp').value.trim(),mloc:$('f-mloc').value.trim(),note:$('f-note').value.trim(),
+    extra:rows.map(r=>({id:r.dataset.id,label:r.querySelector('[name=label]').value.trim(),time:picked(r.querySelector('.times')).join('–'),loc:r.querySelector('[name=loc]').value.trim()}))};
+  if(days[editing]&&days[editing].comp)x.comp=days[editing].comp;
+  $('derr').textContent='保存中…';
+  try{await save([{kind:'days',id:editing,data:x}]);$('dlg').close();render()}catch(e){$('derr').textContent=why(e)}
+};
+
+/* 比赛 */
+let compDay=null;
+function openComp(d){
+  compDay=d;const c=d?days[d].comp:{};
+  $('c-date').value=d||'';$('c-name').value=c.name||'';$('c-place').value=c.place||'';$('c-del').hidden=!d;$('cerr').textContent='';$('cdlg').showModal();
+}
+$('addcomp').onclick=()=>openComp(null);
+const without=d=>{const x={...(days[d]||{})};delete x.comp;return x};
+async function saveComp(rows){
+  $('cerr').textContent='保存中…';
+  try{await save(rows);$('cdlg').close();render()}catch(e){$('cerr').textContent=why(e)}
+}
+$('cform').onsubmit=ev=>{
+  ev.preventDefault();
+  const d=$('c-date').value, name=$('c-name').value.trim();
+  if(!name){$('cerr').textContent='请填比赛名称';return}
+  if(d!==compDay&&days[d]&&days[d].comp){$('cerr').textContent='这一天已经有比赛，请按那场比赛的「修改」';return}
+  const rows=[{kind:'days',id:d,data:{...without(d),comp:{name,place:$('c-place').value.trim()}}}];
+  if(compDay&&compDay!==d)rows.push({kind:'days',id:compDay,data:without(compDay)});
+  saveComp(rows);
+};
+$('c-del').onclick=()=>saveComp([{kind:'days',id:compDay,data:without(compDay)}]);
+
+/* 登入与同步 */
+$('loginbtn').onclick=()=>{$('lerr').textContent='';$('login').showModal()};
+$('logoutbtn').onclick=()=>setSession(null);
+$('lform').onsubmit=async ev=>{
+  ev.preventDefault();$('lerr').textContent='登入中…';
+  try{setSession(await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:$('l-email').value.trim(),password:$('l-pass').value})}));$('l-pass').value='';$('login').close();pull()}
+  catch{$('lerr').textContent='登入失败，请检查 email、密码和网络。'}
+};
+$('upload').onclick=async()=>{try{await save(localRows());render()}catch(e){$('status').hidden=false;$('status').textContent=why(e)}};
+async function pull(){
+  const before=writes;
+  try{
+    const rows=await api('/rest/v1/calendar_entries?select=kind,id,data&order=kind,id');
+    if(before!==writes)return;
+    $('status').hidden=true;
+    const sig=JSON.stringify(rows)+todayMY();
+    if(loaded&&sig===last)return;
+    if(loaded&&(document.activeElement?.tagName==='TEXTAREA'||Object.keys(pending).length))return;
+    last=sig;
+    [notes,days].forEach(o=>Object.keys(o).forEach(k=>delete o[k]));
+    rows.forEach(r=>{if(r.kind==='weeks')notes[r.id]=r.data.note;else days[r.id]=r.data});
+    loaded=true;render();
+  }catch{$('status').hidden=false;$('status').textContent='读取资料失败，请检查网络后刷新页面。'}
+}
+render();
+if(cloud){pull();setInterval(()=>{if(!document.hidden)pull()},30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()})}
+else $('status').textContent='请先填入 Supabase 设定。';
 })();
 </script>
 </body>
