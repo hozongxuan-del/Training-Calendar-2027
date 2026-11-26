@@ -40,7 +40,7 @@ h2{margin:0;font:700 22px var(--num);letter-spacing:.02em}
 .dnote{font-size:12px;overflow-wrap:anywhere}
 label{font-weight:700;font-size:14px;display:flex;justify-content:space-between;gap:8px}
 label output{font-weight:400;color:var(--muted);font-size:12px}
-textarea,input[type=text]{font:inherit;width:100%;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px}
+textarea,input[type=text],input[type=email],input[type=password]{font:inherit;width:100%;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px}
 textarea{min-height:76px;resize:vertical}
 dialog{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:10px;width:min(420px,calc(100vw - 32px));padding:16px}
 dialog::backdrop{background:#0008}
@@ -60,9 +60,23 @@ dialog label.chk{flex-direction:row;justify-content:flex-start;align-items:cente
     <p class="sub">2026年11月 – 2027年4月比赛。周一至五 17:00–19:30，周末 19:00–22:00，周五和周日 19:00–22:00 友谊赛。点日期可改当天安排。</p>
   </header>
   <p class="status" id="status" role="status">正在读取已保存的备注…</p>
+  <div id="auth" hidden>
+    <button type="button" id="loginbtn">教练登入</button>
+    <button type="button" id="logoutbtn" hidden>登出</button>
+    <button type="button" id="upload" hidden>把这台设备的旧备注上传</button>
+  </div>
   <nav id="months" aria-label="选择月份"></nav>
   <div id="weeks" style="display:flex;flex-direction:column;gap:16px"></div>
 </main>
+<dialog id="login" aria-labelledby="ltitle">
+  <form id="lform">
+    <h2 id="ltitle">教练登入</h2>
+    <label for="l-email">Email<input type="email" id="l-email" autocomplete="username" required></label>
+    <label for="l-pass">密码<input type="password" id="l-pass" autocomplete="current-password" required></label>
+    <p class="status" id="lerr" role="alert"></p>
+    <div class="row"><button type="button" id="lcancel">取消</button><button type="submit" class="primary">登入</button></div>
+  </form>
+</dialog>
 <dialog id="dlg" aria-labelledby="dtitle">
   <form id="form">
     <h2 id="dtitle"></h2>
@@ -80,6 +94,10 @@ dialog label.chk{flex-direction:row;justify-content:flex-start;align-items:cente
   </form>
 </dialog>
 <script>
+/* ===== Supabase 设定：把两个值填在引号里面 ===== */
+const SB_URL = 'https://ihfgmukwbjnbutqeuiuj.supabase.co';   // 例如 https://abcdxyz.supabase.co
+const SB_KEY = 'sb_publishable_cYoSqgMQJSwYgUC-Tsvwng_fkTkFck4';   // Publishable key (sb_publishable_...)。绝对不要放 secret key
+/* ============================================== */
 (()=>{
 const $=id=>document.getElementById(id);
 const DAY=864e5, parse=s=>Date.parse(s+'T00:00:00Z'), iso=t=>new Date(t).toISOString().slice(0,10);
@@ -153,11 +171,12 @@ function show(){
 /* storage */
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}},set(k,v){localStorage.setItem(k,JSON.stringify(v))}};
 async function write(col,id,data){
+  if(cloud){await cloudSave([{kind:col,id,data}]);writes++;return}
   if(local){store.set('vb-'+col,col==='weeks'?Object.fromEntries(Object.entries({...notes,[id]:data.note}).map(([k,v])=>[k,{note:v}])):{...days,[id]:data});return}
   const ref=db.doc(col+'/'+id);
   try{await ref.set(data)}catch(e){if(e.code!=='unavailable')throw e;await new Promise(r=>setTimeout(r,800+Math.random()*800));await ref.set(data)}
 }
-const why=e=>e&&e.code==='invalid_argument'?'没有编辑权限，未保存':'保存失败，请再试一次';
+const why=e=>e&&e.code==='login'?'请先登入':e&&e.code==='invalid_argument'?'没有编辑权限，未保存':'保存失败，请再试一次';
 
 const pending={}, timers={}, busy={};
 function queue(w,v){pending[w]=v;$('s-'+w).textContent='未保存';clearTimeout(timers[w]);timers[w]=setTimeout(()=>flush(w),900)}
@@ -178,20 +197,93 @@ function paintDays(){weeks.forEach(w=>{for(let i=0;i<7;i++){const d=iso(parse(w)
 /* day editor */
 let editing=null;
 function setForm(x){$('f-rest').checked=!!x.rest;$('f-time').value=x.time||'';$('f-match').checked=!!x.match;$('f-mtime').value=x.mtime||'';$('f-note').value=x.note||''}
-function openDay(d){editing=d;$('dtitle').textContent=short(d)+' 周'+'日一二三四五六'[new Date(parse(d)).getUTCDay()];$('derr').textContent=db||local?'':'还在读取资料，暂时不能保存';setForm(info(d));$('dlg').showModal()}
+function openDay(d){editing=d;$('dtitle').textContent=short(d)+' 周'+'日一二三四五六'[new Date(parse(d)).getUTCDay()];$('derr').textContent=cloud?(session?'':'只有登入后才能保存'):(db||local?'':'还在读取资料，暂时不能保存');setForm(info(d));$('dlg').showModal()}
 $('cancel').onclick=()=>$('dlg').close();
 $('reset').onclick=()=>setForm(defaults(editing));
 $('form').onsubmit=async ev=>{
   ev.preventDefault();
-  if(!db&&!local)return;
+  if(!db&&!local&&!cloud)return;
+  if(cloud&&!session){$('derr').textContent='请先登入';return}
   const d=editing,x={rest:$('f-rest').checked,time:$('f-time').value.trim(),match:$('f-match').checked,mtime:$('f-mtime').value.trim(),note:$('f-note').value.trim()};
   $('derr').textContent='保存中…';
   try{await write('days',d,x);days[d]=x;fillDay($('d-'+d),d);$('dlg').close()}catch(e){$('derr').textContent=why(e)}
 };
 
+/* Supabase 同步 */
+const cloud=!!(SB_URL&&SB_KEY)&&!SB_KEY.startsWith('sb_secret_');
+const base=SB_URL.trim().replace(/\/(rest\/v1)?\/?$/,'');
+let session=cloud?store.get('vb-session'):null, writes=0, loaded=false, refreshing=null;
+const fail=(code,status)=>Object.assign(new Error(code),{code,status});
+async function api(path,opt={},token){
+  const headers={apikey:SB_KEY,'Content-Type':'application/json',...(opt.headers||{})};
+  if(token)headers.Authorization='Bearer '+token;
+  const r=await fetch(base+path,{...opt,headers});
+  if(!r.ok)throw fail(r.status===401||r.status===403?'invalid_argument':'http',r.status);
+  const t=await r.text();return t?JSON.parse(t):null;
+}
+function setSession(a){
+  session=a?{access:a.access_token,refresh:a.refresh_token,exp:Date.now()+a.expires_in*1000}:null;
+  try{store.set('vb-session',session)}catch{}
+  authUI();
+}
+async function token(){
+  if(!session)throw fail('login');
+  if(Date.now()>session.exp-60000){
+    refreshing=refreshing||api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh})})
+      .then(setSession,e=>{if(e.status>=400&&e.status<500){setSession(null);throw fail('login')}throw e})
+      .finally(()=>refreshing=null);
+    await refreshing;
+  }
+  return session.access;
+}
+async function cloudSave(rows){
+  const t=await token();
+  await api('/rest/v1/calendar_entries?on_conflict=kind,id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows.map(r=>({...r,updated_at:new Date().toISOString()})))},t);
+}
+function localRows(){
+  const rows=[];
+  Object.entries(store.get('vb-weeks')||{}).forEach(([id,v])=>{if(v.note&&!notes[id])rows.push({kind:'weeks',id,data:{note:v.note}})});
+  Object.entries(store.get('vb-days')||{}).forEach(([id,v])=>{if(!days[id])rows.push({kind:'days',id,data:v})});
+  return rows;
+}
+function authUI(){
+  if(!cloud)return;
+  $('auth').hidden=false;$('loginbtn').hidden=!!session;$('logoutbtn').hidden=!session;
+  $('upload').hidden=!(session&&loaded&&localRows().length);
+  weeks.forEach(w=>{const t=$('n-'+w);t.disabled=!loaded;t.readOnly=!session;t.placeholder=session?'写下这个礼拜要练什么':''});
+  if(loaded)$('status').textContent=session?'已登入，备注会自动保存并同步。':'目前是查看模式，登入后才能修改。';
+}
+async function pull(){
+  const before=writes;
+  try{
+    const rows=await api('/rest/v1/calendar_entries?select=kind,id,data');
+    if(before!==writes)return;
+    [notes,days].forEach(o=>Object.keys(o).forEach(k=>delete o[k]));
+    rows.forEach(r=>{if(r.kind==='weeks')notes[r.id]=r.data.note;else days[r.id]=r.data});
+    loaded=true;paintNotes();paintDays();authUI();
+  }catch{$('status').textContent='读取云端资料失败，请检查网络和 Supabase 设定。'}
+}
+function startCloud(){
+  $('loginbtn').onclick=()=>{$('lerr').textContent='';$('login').showModal()};
+  $('lcancel').onclick=()=>$('login').close();
+  $('logoutbtn').onclick=()=>setSession(null);
+  $('lform').onsubmit=async ev=>{
+    ev.preventDefault();$('lerr').textContent='登入中…';
+    try{setSession(await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:$('l-email').value.trim(),password:$('l-pass').value})}));$('l-pass').value='';$('login').close();pull()}
+    catch{$('lerr').textContent='登入失败，请检查 email、密码和网络。'}
+  };
+  $('upload').onclick=async()=>{
+    try{await cloudSave(localRows());writes++;await pull()}catch(e){$('status').textContent=why(e)}
+  };
+  authUI();pull();
+  setInterval(()=>{if(!document.hidden)pull()},30000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
+}
+
 const ready=()=>weeks.forEach(w=>$('n-'+w).disabled=false);
 build();show();
 (async()=>{
+  if(cloud){startCloud();return}
   try{db=window.claude?await window.claude.use('db'):null}catch{db=null}
   if(!db){
     local=true;
