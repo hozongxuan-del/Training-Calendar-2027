@@ -51,6 +51,7 @@ button.slot:hover{outline:2px solid currentColor}
 .row-day{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px}
 .row-day.today{border:2px solid var(--blue)}
 .slots{display:flex;flex-direction:column;gap:8px;min-width:0}
+.daynote{margin:0;font-size:14px;background:var(--bg);border-radius:8px;padding:8px 10px;white-space:pre-wrap;overflow-wrap:anywhere}
 .row-day .slot{font-size:14px;padding:10px 12px}
 .row-day .slot b{font-size:23px}
 /* 教练版：一周一张卡 */
@@ -132,7 +133,7 @@ footer button{font-size:12px;color:var(--muted);background:none}
   <fieldset><label class="chk"><input type="checkbox" id="f-match">友谊赛</label><div class="times" id="f-mt"></div><label>对手（可留空）<input id="f-opp" maxlength="60"></label><label>地点<input id="f-mloc" maxlength="60"></label></fieldset>
   <div id="extras" style="display:flex;flex-direction:column;gap:8px"></div>
   <button type="button" id="addslot">＋ 加时间段</button>
-  <label>当天备注（只在教练版显示）<textarea id="f-note" maxlength="500"></textarea></label>
+  <label>当天备注（球员看得到）<textarea id="f-note" maxlength="500"></textarea></label>
   <p class="status" id="derr" role="alert"></p>
   <div class="actions"><button type="button" id="reset">恢复默认</button><button type="button" data-close>取消</button><button type="submit" class="primary">保存</button></div>
 </form></dialog>
@@ -311,12 +312,19 @@ $('n-del').onclick=()=>saveBoard(posts().filter(p=>p.id!==newsId));
 function dateBox(d){const e=el('div','date',short(d));e.append(el('small','',wk(d)+(d===today?' · 今天':'')));return e}
 const monthDates=()=>{const out=[];for(let t=parse(month+'-01');iso(t).startsWith(month);t+=DAY)out.push(iso(t));return out};
 function renderPlayer(root){
+  const shown=new Set([monday(today)]); /* 本周重点已在页面上方 */
   monthDates().filter(d=>d>=today).forEach(d=>{
     const list=slotsOf(d), comp=days[d]&&days[d].comp;
-    if(!list.length&&!comp)return;
+    const note=days[d]&&days[d].note, w=monday(d);
+    if(!shown.has(w)){
+      shown.add(w);
+      if(notes[w]&&notes[w].trim()){const c=el('section','card');c.append(el('h2','',short(w)+' – '+short(iso(parse(w)+6*DAY))+' 训练重点'),el('p','text',notes[w]));root.append(c)}
+    }
+    if(!list.length&&!comp&&!note)return;
     const row=el('section','row-day'+(d===today?' today':'')), box=el('div','slots');
     if(comp)box.append(el('span','tag c','比赛：'+comp.name));
     list.forEach(s=>box.append(slotButton(d,s)));
+    if(note)box.append(el('p','daynote','备注：'+note));
     row.append(dateBox(d),box);root.append(row);
   });
   if(!root.children.length)root.append(el('p','status','这个月没有接下来的练球。'));
@@ -336,7 +344,7 @@ function renderCoach(root){
       if(d>=FROM&&d<=END){const e=btn('edit','编辑 / 加时段',()=>openDay(d));e.id='e-'+d;c.append(e)}
       g.append(c);
     }
-    const lab=el('label','','本周训练重点（本周的内容球员看得到）'), ta=el('textarea'), out=el('span','status');
+    const lab=el('label','','本周训练重点（球员看得到）'), ta=el('textarea'), out=el('span','status');
     ta.id='n-'+w;ta.maxLength=3000;ta.placeholder='写下这个礼拜要练什么';ta.value=pending[w]??notes[w]??'';
     ta.oninput=()=>queue(w,ta.value);ta.onblur=()=>flush(w);out.id='s-'+w;
     lab.append(ta);card.append(g,lab,out);root.append(card);
